@@ -9,6 +9,9 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@forkd/api": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.0.0"
   }

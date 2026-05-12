@@ -11,6 +11,7 @@ out
 dist
 build
 .turbo
+*.tsbuildinfo
 
 # Environment — never commit real values
 .env

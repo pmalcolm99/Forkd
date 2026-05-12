@@ -13,7 +13,11 @@
     "format": "prettier --write .",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:generate": "pnpm --filter=@forkd/db db:generate",
+    "db:migrate": "pnpm --filter=@forkd/db db:migrate",
+    "db:push": "pnpm --filter=@forkd/db db:push",
+    "db:seed": "pnpm --filter=@forkd/db db:seed"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
