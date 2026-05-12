@@ -1,0 +1,80 @@
+services:
+  webapp:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: forkd:latest
+    user: "1000:1000"
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000" # bound to localhost only; Cloudflare Tunnel reaches it from here
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      CHROME_WS_ENDPOINT: ws://chrome-headless:3000
+      UPLOADS_DIR: /app/uploads
+      BACKUPS_DIR: /app/backups
+    volumes:
+      - app_uploads:/app/uploads
+      - app_backups:/app/backups
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      chrome-headless:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8.4.0
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    # No published port — reachable only on the internal Docker network
+
+  chrome-headless:
+    image: zenika/alpine-chrome:latest
+    restart: unless-stopped
+    command:
+      - --remote-debugging-address=0.0.0.0
+      - --remote-debugging-port=3000
+      - --headless
+      - --no-sandbox
+      - --disable-gpu
+      - --disable-dev-shm-usage
+    # No volumes (stateless) and no published port — webapp reaches it via ws://chrome-headless:3000
+
+volumes:
+  app_uploads:
+  app_backups:
+  db_data:
+  redis_data:

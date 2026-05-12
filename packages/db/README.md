@@ -1,0 +1,3 @@
+# @forkd/db
+
+Drizzle ORM table definitions, `drizzle.config.ts`, and generated SQL migrations for Forkd. One TypeScript file per entity (e.g. `restaurants.ts`, `users.ts`); a barrel `schema.ts` re-exports everything for Drizzle Kit. Follows the schema conventions in §6 of `docs/norish-reference.md`: snake_case columns, camelCase TypeScript fields, UUID primary keys, explicit foreign keys with `onDelete` behaviour, and `createdAt`/`updatedAt` timestamps. The full data model is specified in §4 of `docs/master-requirements.md`. Run `pnpm db:generate` to create a migration and `pnpm db:push` to apply it in development.
