@@ -1,8 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { count, eq, sql } from "drizzle-orm";
 import z from "zod";
-import { auth } from "@forkd/auth";
-import { user } from "@forkd/db";
+import { auth, makeSignature } from "@forkd/auth";
+import { user, session } from "@forkd/db";
 import { logger } from "@forkd/shared";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 
@@ -22,6 +22,12 @@ export const bootstrapInputSchema = z.object({
 const updateProfileSchema = z.object({
   firstName: z.string().min(1, "First name required").max(100).trim(),
   lastName: z.string().min(1, "Last name required").max(100).trim(),
+});
+
+const devSignInSchema = z.object({
+  email: z.string().email(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
 });
 
 function setCookiesFromHeaders(
@@ -132,4 +138,93 @@ export const authRouter = router({
 
       return { success: true };
     }),
+
+  // devSignIn is completely absent in production builds
+  ...(process.env.NODE_ENV !== "production"
+    ? {
+        devSignIn: publicProcedure.input(devSignInSchema).mutation(async ({ input, ctx }) => {
+          // Defense-in-depth: reject explicitly in case of misconfiguration
+          if (process.env.NODE_ENV === "production") {
+            throw new TRPCError({ code: "NOT_FOUND" });
+          }
+
+          // Look up or create the user
+          const [existing] = await ctx.db
+            .select()
+            .from(user)
+            .where(eq(user.email, input.email))
+            .limit(1);
+
+          let userId: string;
+          if (existing) {
+            userId = existing.id;
+            if (input.firstName !== undefined || input.lastName !== undefined) {
+              const firstName = input.firstName ?? existing.firstName ?? "";
+              const lastName = input.lastName ?? existing.lastName ?? "";
+              await ctx.db
+                .update(user)
+                .set({
+                  firstName,
+                  lastName,
+                  name: `${firstName} ${lastName}`.trim(),
+                  updatedAt: new Date(),
+                })
+                .where(eq(user.id, userId));
+            }
+          } else {
+            const { randomUUID } = await import("node:crypto");
+            userId = randomUUID();
+            const firstName = input.firstName ?? "";
+            const lastName = input.lastName ?? "";
+            await ctx.db.insert(user).values({
+              id: userId,
+              email: input.email,
+              emailVerified: true,
+              name: `${firstName} ${lastName}`.trim() || input.email,
+              firstName,
+              lastName,
+              isAdmin: false,
+              isOwner: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+          }
+
+          // Better Auth does not expose a public API for creating a session
+          // without password authentication. Instead we insert the session row
+          // directly and construct the signed cookie value using the public
+          // makeSignature function from better-auth/crypto (same signing
+          // logic Better Auth uses internally in setSessionCookie).
+          const { randomUUID } = await import("node:crypto");
+          const rawToken = randomUUID();
+          const signedToken = `${rawToken}.${await makeSignature(rawToken, process.env.MASTER_KEY!)}`;
+
+          await ctx.db.insert(session).values({
+            id: randomUUID(),
+            token: rawToken,
+            userId,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            // ipAddress and userAgent are nullable — omit
+          });
+
+          const { cookies } = await import("next/headers");
+          const cookieStore = await cookies();
+          // Cookie name: better-auth uses "${cookiePrefix}.session_token" which
+          // resolves to "forkd.session_token" in dev (no __Secure- prefix when
+          // AUTH_URL starts with http://)
+          cookieStore.set("forkd.session_token", signedToken, {
+            httpOnly: true,
+            sameSite: "lax",
+            path: "/",
+            maxAge: 60 * 60 * 24 * 7, // 7 days — matches Better Auth default
+            secure: false, // dev only
+          });
+
+          logger.info({ userId, email: input.email }, "Dev sign-in");
+          return { success: true };
+        }),
+      }
+    : {}),
 });

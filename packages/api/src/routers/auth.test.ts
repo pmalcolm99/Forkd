@@ -14,9 +14,10 @@ vi.mock("@forkd/auth", () => ({
   },
 }));
 
-vi.mock("@forkd/shared", () => ({
-  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
-}));
+vi.mock("@forkd/shared", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@forkd/shared")>();
+  return { ...actual, logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() } };
+});
 
 describe("bootstrapInputSchema — email validation", () => {
   it("rejects a malformed email address", () => {
