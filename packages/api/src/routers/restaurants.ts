@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, count, desc, eq, ilike, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, avg, count, desc, eq, ilike, inArray, isNull, or } from "drizzle-orm";
 import z from "zod";
-import { restaurants } from "@forkd/db";
+import { restaurantReviews, restaurants } from "@forkd/db";
 import { createRestaurantInput, listRestaurantsInput, updateRestaurantInput } from "@forkd/shared";
 import { protectedProcedure, router } from "../trpc";
 
@@ -40,8 +40,39 @@ export const restaurantsRouter = router({
       ctx.db.select({ total: count() }).from(restaurants).where(where),
     ]);
 
+    // Fetch aggregate review stats for this page of restaurants in one query.
+    // avg() with pg driver returns string | null; parseFloat preserves full precision
+    // (rounding to display is handled by formatFamilyAverage in @forkd/shared).
+    let statsMap = new Map<string, { avgStars: string | null; reviewCount: number }>();
+    if (items.length > 0) {
+      const stats = await ctx.db
+        .select({
+          restaurantId: restaurantReviews.restaurantId,
+          avgStars: avg(restaurantReviews.stars),
+          reviewCount: count(),
+        })
+        .from(restaurantReviews)
+        .where(
+          inArray(
+            restaurantReviews.restaurantId,
+            items.map((i) => i.id)
+          )
+        )
+        .groupBy(restaurantReviews.restaurantId);
+      statsMap = new Map(stats.map((s) => [s.restaurantId, s]));
+    }
+
+    const enrichedItems = items.map((item) => {
+      const s = statsMap.get(item.id);
+      return {
+        ...item,
+        familyAverage: s?.avgStars != null ? parseFloat(s.avgStars) : null,
+        reviewCount: s?.reviewCount ?? 0,
+      };
+    });
+
     return {
-      items,
+      items: enrichedItems,
       total: totalResult[0]?.total ?? 0,
       page: input.page,
       pageSize: input.pageSize,
@@ -56,10 +87,22 @@ export const restaurantsRouter = router({
         with: {
           cuisineType: true,
           addedBy: { columns: { id: true, firstName: true, lastName: true } },
+          reviews: {
+            with: { user: { columns: { id: true, firstName: true, lastName: true } } },
+            orderBy: [desc(restaurantReviews.updatedAt), desc(restaurantReviews.createdAt)],
+          },
         },
       });
       if (!row) throw new TRPCError({ code: "NOT_FOUND" });
-      return row;
+
+      // Compute aggregate from fetched reviews (no rounding — formatFamilyAverage handles display).
+      const nonNullStars = row.reviews.filter((r) => r.stars != null).map((r) => r.stars as number);
+      const familyAverage =
+        nonNullStars.length > 0
+          ? nonNullStars.reduce((a, b) => a + b, 0) / nonNullStars.length
+          : null;
+
+      return { ...row, familyAverage, reviewCount: row.reviews.length };
     }),
 
   create: protectedProcedure.input(createRestaurantInput).mutation(async ({ input, ctx }) => {

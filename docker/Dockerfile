@@ -39,6 +39,16 @@ COPY . .
 # Build only the web app (and the workspace packages it depends on)
 RUN pnpm build --filter=@forkd/web
 
+# Bundle the migration script into a self-contained CJS file.
+# esbuild is available here as a Next.js transitive dep; --bundle inlines
+# drizzle-orm and pg so the runner stage needs no extra node_modules for it.
+RUN pnpm --filter @forkd/web exec esbuild scripts/migrate.ts \
+  --bundle \
+  --platform=node \
+  --target=node22 \
+  --format=cjs \
+  --outfile=.next/standalone/migrate.cjs
+
 # ── Stage 3: minimal production runner ─────────────────────────────────────
 FROM node:22-alpine AS runner
 
@@ -54,10 +64,15 @@ COPY --from=builder --chown=node:node /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=builder --chown=node:node /app/apps/web/public        ./apps/web/public
 
+# Drizzle migration SQL files — referenced by migrate.js at path.join(cwd, "migrations")
+COPY --from=builder --chown=node:node /app/packages/db/migrations  ./migrations
+
 USER node
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "apps/web/server.js"]
+# migrate.js runs pending DB migrations + seeds cuisine_types on every boot (idempotent).
+# If it exits non-zero, Next.js never starts — the container fails fast with visible logs.
+CMD ["sh", "-c", "node migrate.cjs && node apps/web/server.js"]

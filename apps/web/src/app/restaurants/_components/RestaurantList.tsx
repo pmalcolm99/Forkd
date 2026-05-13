@@ -22,6 +22,7 @@ import {
   RESTAURANT_STATUS_COLORS,
   RESTAURANT_STATUS_LABELS,
   US_STATES,
+  formatFamilyAverage,
   formatRelativeTime,
   listRestaurantsInput,
 } from "@forkd/shared";
@@ -168,6 +169,7 @@ export function RestaurantList() {
           <TableColumn>Cuisine</TableColumn>
           <TableColumn>State</TableColumn>
           <TableColumn>Status</TableColumn>
+          <TableColumn>Rating</TableColumn>
           <TableColumn>Added by</TableColumn>
           <TableColumn>Added</TableColumn>
         </TableHeader>
@@ -193,6 +195,11 @@ export function RestaurantList() {
                 <TableCell>
                   <Chip color={statusColor.color} className={statusColor.className} size="sm">
                     {RESTAURANT_STATUS_LABELS[row.status]}
+                  </Chip>
+                </TableCell>
+                <TableCell>
+                  <Chip size="sm" variant="flat" color="default">
+                    {formatFamilyAverage(row.familyAverage, row.reviewCount).display}
                   </Chip>
                 </TableCell>
                 <TableCell>{addedBy}</TableCell>

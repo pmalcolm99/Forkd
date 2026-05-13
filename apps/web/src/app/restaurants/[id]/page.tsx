@@ -9,6 +9,9 @@ import {
 } from "@forkd/shared";
 import { serverTrpc } from "@/lib/trpc/server";
 import { DeleteRestaurantButton } from "./_components/DeleteRestaurantButton";
+import { RatingDisplay } from "./_components/RatingDisplay";
+import { ReviewCard } from "./_components/ReviewCard";
+import { AddReviewButton } from "./_components/AddReviewButton";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -37,6 +40,13 @@ export default async function RestaurantDetailPage({ params }: Props) {
     currentUser !== null &&
     (currentUser.isAdmin || currentUser.isOwner || row.addedByUserId === currentUser.id);
 
+  const myReview = currentUser
+    ? (row.reviews.find((r) => r.userId === currentUser.id) ?? null)
+    : null;
+  const otherReviews = currentUser
+    ? row.reviews.filter((r) => r.userId !== currentUser.id)
+    : row.reviews;
+
   const statusColor = RESTAURANT_STATUS_COLORS[row.status];
   const addedBy = row.addedBy
     ? [row.addedBy.firstName, row.addedBy.lastName].filter(Boolean).join(" ")
@@ -49,6 +59,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
         <Chip color={statusColor.color} className={statusColor.className}>
           {RESTAURANT_STATUS_LABELS[row.status]}
         </Chip>
+        <RatingDisplay average={row.familyAverage} count={row.reviewCount} />
       </div>
 
       <div className="mb-4 flex gap-3">
@@ -98,13 +109,24 @@ export default async function RestaurantDetailPage({ params }: Props) {
         Added{addedBy ? ` by ${addedBy}` : ""} · {formatRelativeTime(row.createdAt)}
       </p>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border p-4 text-center text-gray-400">
-          Reviews coming in Phase 3
-        </div>
-        <div className="rounded-lg border p-4 text-center text-gray-400">
-          Photos coming in Phase 4
-        </div>
+      <section className="mb-8">
+        <h2 className="mb-4 text-xl font-semibold">Reviews</h2>
+
+        {myReview ? (
+          <ReviewCard review={myReview} isOwnReview={true} />
+        ) : (
+          currentUser && <AddReviewButton restaurantId={id} />
+        )}
+
+        {otherReviews.map((r) => (
+          <ReviewCard key={r.id} review={r} isOwnReview={false} />
+        ))}
+
+        {row.reviews.length === 0 && <p className="mt-2 text-sm text-gray-400">No reviews yet.</p>}
+      </section>
+
+      <div className="rounded-lg border p-4 text-center text-gray-400">
+        Photos coming in Phase 4
       </div>
     </main>
   );

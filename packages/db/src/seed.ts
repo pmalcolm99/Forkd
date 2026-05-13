@@ -1,3 +1,4 @@
+// Cuisine list is duplicated in apps/web/scripts/migrate.ts — keep in sync.
 import { db } from "./client";
 import { cuisineTypes } from "./schema/index";
 
