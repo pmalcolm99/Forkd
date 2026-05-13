@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@forkd/api": "workspace:*",
@@ -21,6 +22,7 @@
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
     "better-auth": "^1.2.0",
+    "sharp": "^0.33.0",
     "drizzle-orm": "^0.41.0",
     "framer-motion": "^12.0.0",
     "next": "latest",
@@ -36,6 +38,7 @@
     "@types/react-dom": "^19.0.0",
     "esbuild": "^0.28.0",
     "tailwindcss": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
   }
 }

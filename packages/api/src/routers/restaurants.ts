@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, avg, count, desc, eq, ilike, inArray, isNull, or } from "drizzle-orm";
 import z from "zod";
-import { restaurantReviews, restaurants } from "@forkd/db";
+import { restaurantPhotos, restaurantReviews, restaurants } from "@forkd/db";
 import { createRestaurantInput, listRestaurantsInput, updateRestaurantInput } from "@forkd/shared";
 import { protectedProcedure, router } from "../trpc";
 
@@ -62,12 +62,33 @@ export const restaurantsRouter = router({
       statsMap = new Map(stats.map((s) => [s.restaurantId, s]));
     }
 
+    // Fetch the most-recent cover photo per restaurant for this page.
+    let coverMap = new Map<string, { id: string; thumbPath: string }>();
+    if (items.length > 0) {
+      const covers = await ctx.db
+        .selectDistinctOn([restaurantPhotos.restaurantId], {
+          restaurantId: restaurantPhotos.restaurantId,
+          id: restaurantPhotos.id,
+          thumbPath: restaurantPhotos.thumbPath,
+        })
+        .from(restaurantPhotos)
+        .where(
+          inArray(
+            restaurantPhotos.restaurantId,
+            items.map((i) => i.id)
+          )
+        )
+        .orderBy(asc(restaurantPhotos.restaurantId), desc(restaurantPhotos.createdAt));
+      coverMap = new Map(covers.map((c) => [c.restaurantId, { id: c.id, thumbPath: c.thumbPath }]));
+    }
+
     const enrichedItems = items.map((item) => {
       const s = statsMap.get(item.id);
       return {
         ...item,
         familyAverage: s?.avgStars != null ? parseFloat(s.avgStars) : null,
         reviewCount: s?.reviewCount ?? 0,
+        coverPhoto: coverMap.get(item.id) ?? null,
       };
     });
 
@@ -90,6 +111,10 @@ export const restaurantsRouter = router({
           reviews: {
             with: { user: { columns: { id: true, firstName: true, lastName: true } } },
             orderBy: [desc(restaurantReviews.updatedAt), desc(restaurantReviews.createdAt)],
+          },
+          photos: {
+            with: { uploadedBy: { columns: { id: true, firstName: true, lastName: true } } },
+            orderBy: [desc(restaurantPhotos.createdAt)],
           },
         },
       });

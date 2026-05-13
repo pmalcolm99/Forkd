@@ -12,6 +12,8 @@ import { DeleteRestaurantButton } from "./_components/DeleteRestaurantButton";
 import { RatingDisplay } from "./_components/RatingDisplay";
 import { ReviewCard } from "./_components/ReviewCard";
 import { AddReviewButton } from "./_components/AddReviewButton";
+import { PhotoGallery } from "./_components/PhotoGallery";
+import { PhotoUploadButton } from "./_components/PhotoUploadButton";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -125,9 +127,25 @@ export default async function RestaurantDetailPage({ params }: Props) {
         {row.reviews.length === 0 && <p className="mt-2 text-sm text-gray-400">No reviews yet.</p>}
       </section>
 
-      <div className="rounded-lg border p-4 text-center text-gray-400">
-        Photos coming in Phase 4
-      </div>
+      <section className="mb-8">
+        <h2 className="mb-4 text-xl font-semibold">Photos</h2>
+        {currentUser && (
+          <div className="mb-4">
+            <PhotoUploadButton restaurantId={id} photoCount={row.photos.length} />
+          </div>
+        )}
+        {row.photos.length > 0 ? (
+          <PhotoGallery
+            restaurantId={id}
+            photos={row.photos}
+            currentUserId={currentUser?.id ?? ""}
+            isAdmin={currentUser?.isAdmin ?? false}
+            isOwner={currentUser?.isOwner ?? false}
+          />
+        ) : (
+          <p className="mt-2 text-sm text-gray-400">No photos yet.</p>
+        )}
+      </section>
     </main>
   );
 }

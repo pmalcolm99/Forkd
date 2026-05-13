@@ -67,6 +67,10 @@ COPY --from=builder --chown=node:node /app/apps/web/public        ./apps/web/pub
 # Drizzle migration SQL files — referenced by migrate.js at path.join(cwd, "migrations")
 COPY --from=builder --chown=node:node /app/packages/db/migrations  ./migrations
 
+RUN apk add --no-cache vips libheif \
+    && mkdir -p /app/uploads \
+    && chown node:node /app/uploads
+
 USER node
 
 EXPOSE 3000

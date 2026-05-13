@@ -81,6 +81,7 @@ describe("auth.completeBootstrap", () => {
       db: mockDb as never,
       session: null,
       user: null,
+      fileStore: null,
     });
 
     await expect(

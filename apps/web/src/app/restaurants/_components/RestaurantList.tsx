@@ -27,6 +27,7 @@ import {
   listRestaurantsInput,
 } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
+import { photoUrl } from "@/lib/photoUrl";
 
 export function RestaurantList() {
   const router = useRouter();
@@ -165,6 +166,7 @@ export function RestaurantList() {
 
       <Table aria-label="Restaurants">
         <TableHeader>
+          <TableColumn className="w-16"> </TableColumn>
           <TableColumn>Name</TableColumn>
           <TableColumn>Cuisine</TableColumn>
           <TableColumn>State</TableColumn>
@@ -185,6 +187,17 @@ export function RestaurantList() {
               : "—";
             return (
               <TableRow key={row.id}>
+                <TableCell>
+                  {row.coverPhoto ? (
+                    <img
+                      src={photoUrl(row.id, row.coverPhoto.id, "thumb")}
+                      alt=""
+                      className="h-12 w-12 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded bg-gray-100" />
+                  )}
+                </TableCell>
                 <TableCell>
                   <Link href={`/restaurants/${row.id}`} className="font-medium underline">
                     {row.name}

@@ -3,12 +3,19 @@ import superjson from "superjson";
 import { auth } from "@forkd/auth";
 import { db } from "@forkd/db";
 
-export const createTRPCContext = async ({ req }: { req: Request }) => {
+export const createTRPCContext = async ({
+  req,
+  fileStore,
+}: {
+  req: Request;
+  fileStore?: { deletePhotoFiles: (restaurantId: string, photoId: string) => Promise<void> };
+}) => {
   const session = await auth.api.getSession({ headers: req.headers });
   return {
     db,
     session: session?.session ?? null,
     user: session?.user ?? null,
+    fileStore: fileStore ?? null,
   };
 };
 

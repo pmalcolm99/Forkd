@@ -68,6 +68,7 @@ async function makeRestaurantsCaller(
   return createCaller({
     db: mockDb as never,
     session: { id: "sess-1", userId: userCtx.id } as never,
+    fileStore: null,
     user: {
       id: userCtx.id,
       email: "test@example.com",

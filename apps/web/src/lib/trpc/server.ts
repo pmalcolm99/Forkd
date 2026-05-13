@@ -12,5 +12,6 @@ export const serverTrpc = async () => {
     db,
     session: session?.session ?? null,
     user: session?.user ?? null,
+    fileStore: null,
   });
 };
