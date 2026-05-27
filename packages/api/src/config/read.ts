@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { db as dbType } from "@forkd/db";
 import { appConfig } from "@forkd/db";
-import { decrypt } from "@forkd/shared";
+import { decrypt } from "../crypto";
 
 /**
  * Retrieve and (if secret) decrypt a config value from the database.

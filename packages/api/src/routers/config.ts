@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { appConfig } from "@forkd/db";
-import { encrypt, logger } from "@forkd/shared";
+import { logger } from "@forkd/shared";
+import { encrypt } from "../crypto";
 import { adminProcedure, ownerProcedure, router } from "../trpc";
 import { CONFIG_KEYS, CONFIG_KEY_MAP, configKeyEnum } from "../config/keys";
 import { getDecryptedConfigValue } from "../config/read";
