@@ -16,6 +16,7 @@ services:
       CHROME_WS_ENDPOINT: ws://chrome-headless:3000
       UPLOADS_DIR: /app/uploads
       BACKUPS_DIR: /app/backups
+      CF_ACCESS_ENABLED: "${CF_ACCESS_ENABLED:-false}"
     volumes:
       - app_uploads:/app/uploads
       - app_backups:/app/backups

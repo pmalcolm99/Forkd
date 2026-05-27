@@ -13,8 +13,9 @@ export const auth = betterAuth({
     },
   }),
   emailAndPassword: {
-    enabled: true,
-    minPasswordLength: 12,
+    // Disabled: identity comes entirely from Cloudflare Access in production.
+    // Local dev uses /dev/select-user instead.
+    enabled: false,
   },
   user: {
     additionalFields: {
@@ -48,5 +49,13 @@ export const auth = betterAuth({
   baseURL: process.env.AUTH_URL,
   advanced: {
     cookiePrefix: "forkd",
+    // Disable the __Secure- cookie name prefix. Better Auth derives this from AUTH_URL
+    // starting with https://, but that causes a name mismatch with the cookies our
+    // cloudflare-sync route sets (forkd.session_token). The Secure *attribute* (HTTPS-only
+    // transmission) is enforced separately via defaultCookieAttributes below.
+    useSecureCookies: false,
+    defaultCookieAttributes: {
+      secure: (process.env.AUTH_URL ?? "").startsWith("https://"),
+    },
   },
 });

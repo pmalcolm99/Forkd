@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Button, Chip } from "@heroui/react";
+import { Chip } from "@heroui/react";
+import { LinkButton } from "@/components/LinkButton";
 import { TRPCError } from "@trpc/server";
 import {
   RESTAURANT_STATUS_COLORS,
@@ -65,9 +65,9 @@ export default async function RestaurantDetailPage({ params }: Props) {
       </div>
 
       <div className="mb-4 flex gap-3">
-        <Button as={Link} href={`/restaurants/${id}/edit`} variant="flat">
+        <LinkButton href={`/restaurants/${id}/edit`} variant="flat">
           Edit
-        </Button>
+        </LinkButton>
         {canDelete && <DeleteRestaurantButton id={id} />}
       </div>
 

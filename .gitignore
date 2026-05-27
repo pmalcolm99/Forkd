@@ -42,3 +42,6 @@ Thumbs.db
 .vscode
 *.swp
 *.swo
+
+# Private notes — session logs, after action reports, scratch pads
+notes/

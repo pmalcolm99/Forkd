@@ -161,6 +161,7 @@ export function RestaurantList() {
         >
           <SelectItem key="recent">Most recent</SelectItem>
           <SelectItem key="alphabetical">Alphabetical</SelectItem>
+          <SelectItem key="family_rating">Highest rated</SelectItem>
         </Select>
       </div>
 

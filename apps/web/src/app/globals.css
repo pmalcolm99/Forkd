@@ -1,1 +1,5 @@
 @import "tailwindcss";
+@config "../../tailwind.config.js";
+/* HeroUI v2 ships component slot class names in .mjs chunks under @heroui/theme/dist.
+   @source makes Tailwind scan those files so utilities like bg-primary are included. */
+@source "../../node_modules/@heroui/theme/dist";

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, avg, count, desc, eq, ilike, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, avg, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import z from "zod";
 import { restaurantPhotos, restaurantReviews, restaurants } from "@forkd/db";
 import { createRestaurantInput, listRestaurantsInput, updateRestaurantInput } from "@forkd/shared";
@@ -23,7 +23,11 @@ export const restaurantsRouter = router({
 
     const where = and(...filters);
     const orderBy =
-      input.sort === "alphabetical" ? asc(restaurants.name) : desc(restaurants.createdAt);
+      input.sort === "alphabetical"
+        ? asc(restaurants.name)
+        : input.sort === "family_rating"
+          ? sql`(SELECT AVG(${restaurantReviews.stars}) FROM ${restaurantReviews} WHERE ${restaurantReviews.restaurantId} = ${restaurants.id}) DESC NULLS LAST`
+          : desc(restaurants.createdAt);
     const offset = (input.page - 1) * input.pageSize;
 
     const [items, totalResult] = await Promise.all([

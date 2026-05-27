@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Alert, Button, Spinner, Tooltip } from "@heroui/react";
 import { MAX_PHOTO_BYTES, MAX_PHOTOS_PER_RESTAURANT } from "@forkd/shared";
-import { trpc } from "@/lib/trpc/client";
 
 interface Props {
   restaurantId: string;
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function PhotoUploadButton({ restaurantId, photoCount }: Props) {
-  const utils = trpc.useUtils();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export function PhotoUploadButton({ restaurantId, photoCount }: Props) {
         throw new Error(json.message ?? `Upload failed (${res.status})`);
       }
 
-      await utils.restaurants.get.invalidate({ id: restaurantId });
+      router.refresh(); // re-render the RSC so the new photo appears and photoCount updates
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {

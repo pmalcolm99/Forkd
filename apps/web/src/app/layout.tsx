@@ -12,15 +12,18 @@ const isDev = process.env.NODE_ENV !== "production";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="light">
       <body>
-        {isDev && (
-          <nav className="flex justify-end bg-yellow-100 px-4 py-1 text-sm">
-            <Link href="/dev/sign-in" className="underline">
+        <nav className="flex justify-end gap-4 bg-gray-100 px-4 py-1 text-sm">
+          {isDev && (
+            <Link href="/dev/select-user" className="underline text-yellow-700">
               Switch user
             </Link>
-          </nav>
-        )}
+          )}
+          <Link href="/sign-out" className="underline">
+            Sign out
+          </Link>
+        </nav>
         <Providers>{children}</Providers>
       </body>
     </html>

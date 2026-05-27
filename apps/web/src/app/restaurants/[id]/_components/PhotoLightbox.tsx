@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import { formatRelativeTime } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
@@ -26,7 +27,7 @@ export function PhotoLightbox({
   isOwner,
   onClose,
 }: Props) {
-  const utils = trpc.useUtils();
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -34,8 +35,8 @@ export function PhotoLightbox({
   const canDelete = photo.uploadedByUserId === currentUserId || isAdmin || isOwner;
 
   const { mutate: deletePhoto, isPending: deleting } = trpc.photos.delete.useMutation({
-    async onSuccess() {
-      await utils.restaurants.get.invalidate({ id: restaurantId });
+    onSuccess() {
+      router.refresh();
       onClose();
     },
   });

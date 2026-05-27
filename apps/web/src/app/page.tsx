@@ -1,27 +1,19 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { count } from "drizzle-orm";
-import { db, user } from "@forkd/db";
 import { serverTrpc } from "@/lib/trpc/server";
 
 export default async function HomePage() {
-  const [result] = await db.select({ count: count() }).from(user);
-  if ((result?.count ?? 0) === 0) {
-    redirect("/bootstrap");
-  }
-
   const caller = await serverTrpc();
-  let currentUser: Awaited<ReturnType<typeof caller.auth.me>>;
+  // Determine the redirect target before calling redirect() — redirect() works by
+  // throwing a NEXT_REDIRECT error, so it must not be called inside try/catch or
+  // the catch block will intercept it and swallow the successful redirect.
+  let target = "/sign-in";
   try {
-    currentUser = await caller.auth.me();
+    const me = await caller.auth.me();
+    target = me.firstName && me.lastName ? "/restaurants" : "/welcome";
   } catch {
-    redirect("/sign-in");
+    // No session or auth error — send to sign-in.
   }
-
-  if (!currentUser.firstName || !currentUser.lastName) {
-    redirect("/welcome");
-  }
-
-  redirect("/restaurants");
+  redirect(target);
 }

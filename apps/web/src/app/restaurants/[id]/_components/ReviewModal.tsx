@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Button,
   Modal,
@@ -66,6 +67,7 @@ function StarInput({
 }
 
 export function ReviewModal({ isOpen, onClose, restaurantId, existingReview }: Props) {
+  const router = useRouter();
   const utils = trpc.useUtils();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -76,7 +78,8 @@ export function ReviewModal({ isOpen, onClose, restaurantId, existingReview }: P
 
   const mutation = trpc.reviews.upsert.useMutation({
     onSuccess: () => {
-      void utils.restaurants.invalidate();
+      void utils.restaurants.invalidate(); // update the list page cache
+      router.refresh(); // re-render the RSC so the new review and updated rating appear
       onClose();
     },
   });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import { trpc } from "@/lib/trpc/client";
 import type { ReviewWithReviewer } from "./ReviewCard";
@@ -12,12 +13,12 @@ interface Props {
 }
 
 export function ReviewActions({ review, restaurantId }: Props) {
+  const router = useRouter();
   const [openModal, setOpenModal] = useState<"edit" | "delete" | null>(null);
-  const utils = trpc.useUtils();
 
   const deleteMutation = trpc.reviews.delete.useMutation({
     onSuccess: () => {
-      void utils.restaurants.invalidate();
+      router.refresh();
       setOpenModal(null);
     },
   });
