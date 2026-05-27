@@ -35,9 +35,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               Admin
             </Link>
           )}
-          <Link href="/sign-out" className="underline">
+          <a href="/api/auth/sign-out" className="underline">
             Sign out
-          </Link>
+          </a>
         </nav>
         <Providers>{children}</Providers>
       </body>
