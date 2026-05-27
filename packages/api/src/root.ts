@@ -1,5 +1,6 @@
 import { router } from "./trpc";
 import { authRouter } from "./routers/auth";
+import { configRouter } from "./routers/config";
 import { cuisinesRouter } from "./routers/cuisines";
 import { usersRouter } from "./routers/users";
 import { restaurantsRouter } from "./routers/restaurants";
@@ -8,6 +9,7 @@ import { photosRouter } from "./routers/photos";
 
 export const appRouter = router({
   auth: authRouter,
+  config: configRouter,
   cuisines: cuisinesRouter,
   users: usersRouter,
   restaurants: restaurantsRouter,

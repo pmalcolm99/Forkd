@@ -6,9 +6,11 @@ import { db } from "@forkd/db";
 export const createTRPCContext = async ({
   req,
   fileStore,
+  shutdownFn,
 }: {
   req: Request;
   fileStore?: { deletePhotoFiles: (restaurantId: string, photoId: string) => Promise<void> };
+  shutdownFn?: (reason: string, actorId: string) => Promise<void>;
 }) => {
   const session = await auth.api.getSession({ headers: req.headers });
   return {
@@ -16,6 +18,7 @@ export const createTRPCContext = async ({
     session: session?.session ?? null,
     user: session?.user ?? null,
     fileStore: fileStore ?? null,
+    shutdownFn: shutdownFn ?? null,
   };
 };
 

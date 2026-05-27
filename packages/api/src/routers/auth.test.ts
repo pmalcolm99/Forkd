@@ -45,6 +45,7 @@ describe("auth.signOut", () => {
         isOwner: false,
       } as never,
       fileStore: null,
+      shutdownFn: null,
     });
 
     const result = await caller.auth.signOut();

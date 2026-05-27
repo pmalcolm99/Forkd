@@ -53,5 +53,6 @@ export const serverTrpc = async () => {
     session: (data?.session ?? null) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     user: (data?.user ?? null) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     fileStore: null,
+    shutdownFn: null,
   });
 };

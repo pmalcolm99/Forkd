@@ -1,2 +1,2 @@
-export { db } from "./client";
+export { db, closePool } from "./client";
 export * from "./schema/index";

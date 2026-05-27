@@ -5,7 +5,7 @@ services:
       dockerfile: docker/Dockerfile
     image: forkd:latest
     user: "1000:1000"
-    restart: unless-stopped
+    restart: always # required for in-app restart feature; Docker re-spawns after process.exit(0)
     ports:
       - "127.0.0.1:3000:3000" # bound to localhost only; Cloudflare Tunnel reaches it from here
     env_file:
