@@ -56,6 +56,9 @@ export default async function RestaurantDetailPage({ params }: Props) {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
+      <LinkButton href="/" variant="light" size="sm" className="mb-4 -ml-2">
+        ← All restaurants
+      </LinkButton>
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-bold">{row.name}</h1>
         <Chip color={statusColor.color} className={statusColor.className}>
