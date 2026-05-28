@@ -4,6 +4,8 @@ import z from "zod";
 import { restaurantPhotos, restaurantReviews, restaurants } from "@forkd/db";
 import { createRestaurantInput, listRestaurantsInput, updateRestaurantInput } from "@forkd/shared";
 import { protectedProcedure, router } from "../trpc";
+import { suggestRestaurantMetadata } from "../ai/anthropic";
+import { getDecryptedConfigValue } from "../config/read";
 
 export const restaurantsRouter = router({
   list: protectedProcedure.input(listRestaurantsInput).query(async ({ input, ctx }) => {
@@ -176,5 +178,22 @@ export const restaurantsRouter = router({
         .set({ deletedAt: new Date() })
         .where(eq(restaurants.id, input.id));
       return { success: true };
+    }),
+
+  claudeConfigured: protectedProcedure.query(async ({ ctx }) => {
+    const key = await getDecryptedConfigValue("ai.claude.api_key", ctx.db);
+    return { configured: !!key };
+  }),
+
+  suggestMetadata: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(200),
+        address: z.string().max(500).nullish(),
+        website: z.string().url().nullish(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      return suggestRestaurantMetadata(input, ctx.db);
     }),
 });

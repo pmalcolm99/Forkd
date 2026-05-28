@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, Input, Select, SelectItem, Textarea } from "@heroui/react";
+import { useState } from "react";
+import { Button, Input, Select, SelectItem, Textarea, Tooltip } from "@heroui/react";
 import type { CreateRestaurantInput } from "@forkd/shared";
 import { RESTAURANT_STATUS_LABELS, US_STATES, createRestaurantInput } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
@@ -24,7 +25,26 @@ export function RestaurantForm({
     defaultValues ?? {}
   );
 
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+
   const { data: cuisines } = trpc.cuisines.list.useQuery();
+  const { data: aiConfig } = trpc.restaurants.claudeConfigured.useQuery();
+
+  const suggest = trpc.restaurants.suggestMetadata.useMutation({
+    onSuccess(result) {
+      if (result.status === "success") {
+        setField("description", result.description);
+        const match = cuisines?.find((c) => c.name.toLowerCase() === result.cuisine.toLowerCase());
+        if (match) setField("cuisineTypeId", match.id);
+        setSuggestError(null);
+      } else if (result.status === "failed") {
+        setSuggestError("AI suggestion failed. You can fill in the fields manually.");
+      }
+    },
+    onError() {
+      setSuggestError("AI suggestion failed. You can fill in the fields manually.");
+    },
+  });
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -110,6 +130,30 @@ export function RestaurantForm({
         isInvalid={!!errors.description}
         errorMessage={errors.description}
       />
+
+      <div className="flex flex-col gap-1">
+        <Tooltip
+          content="Configure a Claude API key in admin settings to enable AI suggestions"
+          isDisabled={!!aiConfig?.configured}
+        >
+          <Button
+            color="secondary"
+            variant="flat"
+            isLoading={suggest.isPending}
+            isDisabled={!aiConfig?.configured || suggest.isPending}
+            onPress={() =>
+              suggest.mutate({
+                name: values.name ?? "",
+                address: values.address,
+                website: values.website,
+              })
+            }
+          >
+            Suggest cuisine &amp; description with AI
+          </Button>
+        </Tooltip>
+        {suggestError && <p className="text-sm text-danger">{suggestError}</p>}
+      </div>
 
       <Button type="submit" color="primary" isLoading={isSubmitting} isDisabled={isSubmitting}>
         {submitLabel}
