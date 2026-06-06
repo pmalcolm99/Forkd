@@ -26,12 +26,20 @@ function httpGetJson(hostname: string, port: number, path: string): Promise<unkn
 }
 
 async function getWsEndpoint(cdpEndpoint: string): Promise<string> {
-  const { hostname, port } = new URL(cdpEndpoint);
-  const info = (await httpGetJson(hostname, parseInt(port || "80", 10), "/json/version")) as {
+  const cdp = new URL(cdpEndpoint);
+  const info = (await httpGetJson(
+    cdp.hostname,
+    parseInt(cdp.port || "80", 10),
+    "/json/version"
+  )) as {
     webSocketDebuggerUrl: string;
   };
-  // webSocketDebuggerUrl uses 127.0.0.1; replace with the real container hostname
-  return info.webSocketDebuggerUrl.replace("127.0.0.1", hostname).replace("[::1]", hostname);
+  // Chrome builds webSocketDebuggerUrl from the Host header we sent ("localhost", no port).
+  // Parse both URLs and transplant the real hostname + port from cdpEndpoint.
+  const ws = new URL(info.webSocketDebuggerUrl);
+  ws.hostname = cdp.hostname;
+  ws.port = cdp.port;
+  return ws.toString();
 }
 
 export async function scrapePost(url: string): Promise<ScrapeResult> {
