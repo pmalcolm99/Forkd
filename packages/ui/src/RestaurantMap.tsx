@@ -1,0 +1,84 @@
+"use client";
+
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  RESTAURANT_STATUS_PIN_COLORS,
+  RESTAURANT_STATUS_LABELS,
+  type RestaurantStatus,
+} from "@forkd/shared";
+
+export interface MapRestaurant {
+  id: string;
+  name: string;
+  status: RestaurantStatus;
+  latitude: string;
+  longitude: string;
+}
+
+interface Props {
+  restaurants: MapRestaurant[];
+}
+
+function makeIcon(status: RestaurantStatus): L.DivIcon {
+  const color = RESTAURANT_STATUS_PIN_COLORS[status];
+  return L.divIcon({
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>`,
+    className: "",
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+    popupAnchor: [0, -10],
+  });
+}
+
+interface FitBoundsProps {
+  restaurants: MapRestaurant[];
+}
+
+function FitBounds({ restaurants }: FitBoundsProps) {
+  const map = useMap();
+
+  if (restaurants.length === 0) return null;
+
+  if (restaurants.length === 1) {
+    const r = restaurants[0];
+    if (r) map.setView([parseFloat(r.latitude), parseFloat(r.longitude)], 13);
+    return null;
+  }
+
+  const bounds = L.latLngBounds(
+    restaurants.map((r) => [parseFloat(r.latitude), parseFloat(r.longitude)] as [number, number])
+  );
+  map.fitBounds(bounds, { padding: [40, 40] });
+  return null;
+}
+
+export function RestaurantMap({ restaurants }: Props) {
+  return (
+    <MapContainer center={[39.83, -98.58]} zoom={4} style={{ height: "600px", width: "100%" }}>
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      />
+      <FitBounds restaurants={restaurants} />
+      {restaurants.map((r) => (
+        <Marker
+          key={r.id}
+          position={[parseFloat(r.latitude), parseFloat(r.longitude)]}
+          icon={makeIcon(r.status)}
+        >
+          <Popup>
+            <div>
+              <p className="font-semibold">{r.name}</p>
+              <p className="text-sm text-gray-600">{RESTAURANT_STATUS_LABELS[r.status]}</p>
+              <a href={`/restaurants/${r.id}`} className="text-sm underline">
+                View details
+              </a>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
+  );
+}

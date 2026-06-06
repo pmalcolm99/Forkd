@@ -82,6 +82,13 @@ export default async function RestaurantDetailPage({ params }: Props) {
         />
       </div>
 
+      {(row.latitude === null || row.longitude === null) && (
+        <p className="mb-4 text-sm text-amber-600">
+          No map coordinates — use &ldquo;Refresh metadata&rdquo; to fetch them so this restaurant
+          appears on the map.
+        </p>
+      )}
+
       <div className="mb-6 rounded-lg border p-4">
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
           <dt className="font-medium text-gray-500">Address</dt>

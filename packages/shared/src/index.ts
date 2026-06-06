@@ -7,3 +7,4 @@ export * from "./restaurantStatus";
 export * from "./usStates";
 export * from "./formatRelativeTime";
 export { formatFamilyAverage } from "./familyAverage";
+export { parseRestaurantFilters } from "./parseRestaurantFilters";

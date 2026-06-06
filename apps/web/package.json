@@ -16,6 +16,7 @@
     "@forkd/db": "workspace:*",
     "@forkd/shared": "workspace:*",
     "@forkd/trpc": "workspace:*",
+    "@forkd/ui": "workspace:*",
     "@heroui/react": "^2.7.8",
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "^11.0.0",

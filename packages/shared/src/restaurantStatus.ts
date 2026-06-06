@@ -20,3 +20,11 @@ export const RESTAURANT_STATUS_COLORS: Record<
   been_disliked: { color: "danger" },
   permanently_closed: { color: "default", className: "bg-gray-900 text-white" },
 };
+
+export const RESTAURANT_STATUS_PIN_COLORS: Record<RestaurantStatus, string> = {
+  want_to_try: "#6b7280",
+  been_loved: "#22c55e",
+  been_okay: "#f59e0b",
+  been_disliked: "#ef4444",
+  permanently_closed: "#111827",
+};
