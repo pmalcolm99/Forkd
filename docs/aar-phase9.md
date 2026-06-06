@@ -1,8 +1,8 @@
 # After Action Report — Phase 9: Map View
 
 **Date completed:** 2026-06-06
-**Commit:** (pending)
-**CI:** (pending)
+**Commit:** `63a82f5`
+**CI:** ✅ All checks green (ci: 47s, docker: 2m33s)
 
 ---
 
