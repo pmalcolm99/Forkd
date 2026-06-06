@@ -696,9 +696,9 @@ Forkd adopts Norish's four-container topology unchanged at the container level (
 #### `chrome-headless` — for social media scraping
 
 - **Image:** `zenika/alpine-chrome:latest`.
-- **Command:** runs Chrome with `--remote-debugging-address=0.0.0.0 --remote-debugging-port=3000 --headless --no-sandbox --disable-gpu --disable-dev-shm-usage`.
+- **Command:** runs Chrome with `--remote-debugging-address=0.0.0.0 --remote-debugging-port=3000 --remote-allow-origins=* --headless --no-sandbox --disable-gpu --disable-dev-shm-usage`. The `--remote-allow-origins=*` flag is required: without it Chrome's DevTools HTTP server rejects requests with non-localhost `Host` headers (DNS-rebinding protection), returning 500 for all `/json/*` endpoints.
 - **No volumes** (stateless).
-- **No published port.** Only `webapp` reaches it over the internal network on `ws://chrome-headless:3000`.
+- **No published port.** Only `webapp` reaches it over the internal network on `http://chrome-headless:3000`.
 
 ### 9.2 `docker-compose.yml` skeleton
 
@@ -720,7 +720,7 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379
-      CHROME_WS_ENDPOINT: ws://chrome-headless:3000
+      CHROME_CDP_ENDPOINT: http://chrome-headless:3000
       UPLOADS_DIR: /app/uploads
       BACKUPS_DIR: /app/backups
     volumes:
@@ -806,12 +806,12 @@ This list is the source of truth for `.env.example`. All real values stay in the
 
 ### 10.2 Service URLs (default values usually correct)
 
-| Variable             | Description                               | Default                     |
-| -------------------- | ----------------------------------------- | --------------------------- |
-| `REDIS_URL`          | Redis connection string                   | `redis://redis:6379`        |
-| `CHROME_WS_ENDPOINT` | Headless Chrome CDP WebSocket             | `ws://chrome-headless:3000` |
-| `UPLOADS_DIR`        | Where photo uploads live in the container | `/app/uploads`              |
-| `BACKUPS_DIR`        | Where backup files live in the container  | `/app/backups`              |
+| Variable              | Description                                                                                | Default                       |
+| --------------------- | ------------------------------------------------------------------------------------------ | ----------------------------- |
+| `REDIS_URL`           | Redis connection string                                                                    | `redis://redis:6379`          |
+| `CHROME_CDP_ENDPOINT` | Headless Chrome HTTP endpoint (Playwright fetches `/json/version` to discover the WS path) | `http://chrome-headless:3000` |
+| `UPLOADS_DIR`         | Where photo uploads live in the container                                                  | `/app/uploads`                |
+| `BACKUPS_DIR`         | Where backup files live in the container                                                   | `/app/backups`                |
 
 ### 10.3 Optional runtime
 

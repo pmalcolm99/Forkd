@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+import http from "node:http";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -106,6 +107,45 @@ async function processImport(data: ImportJobData): Promise<void> {
   }
 }
 
+async function checkChromeReachability(): Promise<void> {
+  const endpoint = process.env.CHROME_CDP_ENDPOINT;
+  if (!endpoint) {
+    logger.warn("CHROME_CDP_ENDPOINT is not set — scraper will fail on first job");
+    return;
+  }
+  try {
+    // Chrome's DevTools HTTP endpoint rejects non-localhost Host headers (DNS-rebinding
+    // protection). Neither fetch nor undici allows overriding Host; node:http does.
+    const { hostname, port } = new URL(endpoint);
+    const info = await new Promise<{ Browser?: string }>((resolve, reject) => {
+      const req = http.request(
+        {
+          hostname,
+          port: parseInt(port || "80", 10),
+          path: "/json/version",
+          headers: { Host: "localhost" },
+        },
+        (res) => {
+          let raw = "";
+          res.on("data", (chunk: Buffer) => (raw += chunk.toString()));
+          res.on("end", () => {
+            if (res.statusCode !== 200) reject(new Error(`status ${res.statusCode}`));
+            else resolve(JSON.parse(raw) as { Browser?: string });
+          });
+        }
+      );
+      req.on("error", reject);
+      req.end();
+    });
+    logger.info({ browser: info.Browser ?? "unknown" }, "Chrome reachable");
+  } catch (err) {
+    logger.warn(
+      { err, endpoint },
+      "Chrome unreachable at startup — scraper will fail on first job"
+    );
+  }
+}
+
 export function startImportWorker(): void {
   const worker = new Worker<ImportJobData>("import", (job) => processImport(job.data), {
     connection: getRedisOptions(),
@@ -119,4 +159,5 @@ export function startImportWorker(): void {
   });
 
   logger.info("Import worker started");
+  void checkChromeReachability();
 }
