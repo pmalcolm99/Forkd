@@ -7,15 +7,10 @@ import { trpc } from "@/lib/trpc/client";
 
 interface Props {
   restaurantId: string;
-  googlePlaceId: string | null;
   googlePlacesConfigured: boolean;
 }
 
-export function RefreshGoogleRatingButton({
-  restaurantId,
-  googlePlaceId,
-  googlePlacesConfigured,
-}: Props) {
+export function RefreshGoogleRatingButton({ restaurantId, googlePlacesConfigured }: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
@@ -31,9 +26,7 @@ export function RefreshGoogleRatingButton({
 
   const disabledReason = !googlePlacesConfigured
     ? "Configure Google Places API key in admin settings"
-    : !googlePlaceId
-      ? "No Google Place ID stored for this restaurant"
-      : null;
+    : null;
 
   return (
     <div className="flex flex-col gap-1">

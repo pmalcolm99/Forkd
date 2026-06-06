@@ -222,12 +222,42 @@ export const restaurantsRouter = router({
         where: and(eq(restaurants.id, input.restaurantId), isNull(restaurants.deletedAt)),
       });
       if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // Step 1: if no place_id stored, find it via text search first.
       if (!row.googlePlaceId) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "No Google Place ID stored for this restaurant",
-        });
+        const query = [row.name, row.address ?? row.state].filter(Boolean).join(", ");
+        const search = await searchPlaces(query, ctx.db);
+        if (search.status === "not_configured") {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Google Places API key not configured",
+          });
+        }
+        if (search.status === "failed") {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: search.error });
+        }
+        const top = search.results[0];
+        if (!top) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "No Google Places result found for this restaurant",
+          });
+        }
+        await ctx.db
+          .update(restaurants)
+          .set({
+            googlePlaceId: top.placeId,
+            googleRating: top.rating !== null ? String(top.rating) : null,
+            googleRatingFetchedAt: new Date(),
+            latitude: String(top.latitude),
+            longitude: String(top.longitude),
+            updatedAt: new Date(),
+          })
+          .where(eq(restaurants.id, input.restaurantId));
+        return { ok: true };
       }
+
+      // Step 2: place_id already known — refresh rating + coordinates from Place Details.
       const result = await getPlaceRating(row.googlePlaceId, ctx.db);
       if (result.status === "not_configured") {
         throw new TRPCError({

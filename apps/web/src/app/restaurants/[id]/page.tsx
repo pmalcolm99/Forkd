@@ -78,7 +78,6 @@ export default async function RestaurantDetailPage({ params }: Props) {
         {canDelete && <DeleteRestaurantButton id={id} />}
         <RefreshGoogleRatingButton
           restaurantId={id}
-          googlePlaceId={row.googlePlaceId}
           googlePlacesConfigured={googlePlacesConfigured}
         />
       </div>
