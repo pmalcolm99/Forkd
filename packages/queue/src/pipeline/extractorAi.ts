@@ -45,7 +45,7 @@ Return ONLY a JSON object with exactly these fields:
 - "name": restaurant name (required, non-empty string)
 - "address": street address or neighborhood/area (empty string if unknown)
 - "state": 2-letter US state code like "TX" or "NY" (required — infer from context; use your best guess based on the content)
-- "cuisine": type of cuisine like "Mexican" or "Italian" (empty string if unknown)
+- "cuisine": cuisine category inferred from the content — infer aggressively from food keywords (sushi/omakase/ramen/miso → "Japanese", tacos/enchiladas/birria → "Mexican", pasta/pizza/risotto → "Italian", pho/banh mi → "Vietnamese", BBQ/brisket/ribs → "BBQ", burgers/fries → "American", etc.). Empty string only if the cuisine is genuinely impossible to determine
 - "description": 1-2 sentence description of the restaurant (empty string if unknown)
 - "confidence": "high", "medium", or "low" — your confidence in the extracted restaurant name
 

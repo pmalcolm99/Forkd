@@ -1,6 +1,7 @@
 # After Action Report — Phase 10: Social Media Import Pipeline
 
 **Date completed:** 2026-06-06
+**Post-launch fixes:** 2026-06-06 (same day — first live test exposed three pipeline bugs; all fixed and CI green)
 **CI:** ✅ All checks green
 
 ---
@@ -20,14 +21,14 @@ New workspace package `@forkd/queue` with two subpath exports:
 
 ### Pipeline modules (`packages/queue/src/pipeline/`)
 
-| Module              | Responsibility                                                                                                                                                                                                            |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scraper.ts`        | Playwright CDP connects to `chrome-headless` via `CHROME_WS_ENDPOINT`; extracts title + body text (capped at 8000 chars). Uses `page.locator("body").innerText()` — avoids DOM type errors in a tsconfig with no lib DOM. |
-| `downloader.ts`     | yt-dlp subprocess; `--match-filter "duration <= N"` aborts pre-download on over-length videos. 120 s timeout.                                                                                                             |
-| `audioExtractor.ts` | ffmpeg subprocess; converts video to Opus/32 kbps audio. 60 s timeout.                                                                                                                                                    |
-| `transcriber.ts`    | OpenAI Whisper via `audio.transcriptions.create`. Reads API key from encrypted `app_config`; throws `"Whisper not configured"` if absent.                                                                                 |
-| `extractorAi.ts`    | Claude extraction; own Zod schema validated before any DB write. Strips markdown fences. Falls back to `"claude-opus-4-7"`. Throws `"Claude not configured"` if no key.                                                   |
-| `confirmer.ts`      | Google Places text search re-implemented locally (not imported from `@forkd/api`) to avoid circular dependency. Returns `null` silently if not configured.                                                                |
+| Module              | Responsibility                                                                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scraper.ts`        | Playwright CDP connects to `chrome-headless` via `CHROME_CDP_ENDPOINT` (HTTP URL). Fetches `/json/version` using `node:http` with `Host: localhost` to bypass Chrome's DNS-rebinding check, then transplants hostname+port into the WS URL. |
+| `downloader.ts`     | yt-dlp subprocess; `--match-filter "duration <= N"` aborts pre-download on over-length videos. 120 s timeout.                                                                                                                               |
+| `audioExtractor.ts` | ffmpeg subprocess; converts video to AAC/64 kbps `.m4a`. Uses ffmpeg's native `aac` encoder (always available on Alpine). `.m4a` is in Whisper's accepted format list.                                                                      |
+| `transcriber.ts`    | OpenAI Whisper via `audio.transcriptions.create`. Reads API key from encrypted `app_config`; throws `"Whisper not configured"` if absent.                                                                                                   |
+| `extractorAi.ts`    | Claude extraction; own Zod schema validated before any DB write. Strips markdown fences. Falls back to `"claude-opus-4-7"`. Throws `"Claude not configured"` if no key.                                                                     |
+| `confirmer.ts`      | Google Places text search re-implemented locally (not imported from `@forkd/api`) to avoid circular dependency. Returns `null` silently if not configured.                                                                                  |
 
 **Extraction schema (AI safety layer):**
 
@@ -105,6 +106,25 @@ yt-dlp GitHub releases use zero-padded months. `2025.1.15` returns HTTP 404. Fix
 
 `vi.mock("node:child_process", factory)` inside `it()` blocks is hoisted to file scope by Vitest. The second factory definition (failure case) overwrote the first (success case), so the success test received the failure mock. Fix: removed subprocess mocking tests entirely. `pipeline.test.ts` now tests only the pure Zod `extractionSchema` (11 tests, zero I/O).
 
+### Chrome CDP: WebSocket error `ws://chrome-headless:3000/ 404 Not Found`
+
+**Root cause (original):** `connectOverCDP` was called with `ws://chrome-headless:3000` (the full WS URL). Chrome's DevTools WS server returns 404 at the root path `/` — the correct path is `/devtools/browser/<uuid>`, which changes on every Chrome restart.
+
+**Root cause (DNS-rebinding protection):** Switching to `http://chrome-headless:3000` so Playwright could fetch `/json/version` internally still failed: Chrome's DevTools HTTP endpoint returns 500 for any `Host` header that isn't `localhost` or an IP address. This protects against DNS-rebinding attacks. `--remote-allow-origins=*` controls CORS only, not the Host check.
+
+**Fix (three commits):**
+
+1. Fetch `/json/version` with `node:http` (not `fetch`/undici — both copy the URL hostname into Host and cannot override it) with `Host: localhost` hardcoded. Chrome accepts the request and returns the `webSocketDebuggerUrl`.
+2. Parse both `cdpEndpoint` and `webSocketDebuggerUrl` as `URL` objects; set `ws.hostname` and `ws.port` from `cdp`. Chrome builds the returned URL using the Host header (`localhost`, no port), so the UUID WS path had `ws://localhost/devtools/browser/...`; the string-replacement approach only covered `127.0.0.1` and `[::1]`, not `localhost`. URL transplanting handles all cases.
+3. Added `--remote-allow-origins=*` to the `chrome-headless` container command (belt-and-suspenders for future CORS needs).
+4. Renamed `CHROME_WS_ENDPOINT` → `CHROME_CDP_ENDPOINT` to reflect that the env var now holds an HTTP URL, not a raw WS URL. Updated `.env.example`, `docker-compose.yml`, and `docs/master-requirements.md`.
+
+**Startup self-check:** `startImportWorker()` fires `checkChromeReachability()` (void, non-blocking) on boot. Success logs `Chrome reachable: HeadlessChrome/124.0.6367.78`; failure logs a warn with the error reason so any future connectivity issue is immediately visible in container logs.
+
+### Audio format rejected by Whisper: `400 Invalid file format`
+
+`audioExtractor.ts` produced `audio.opus` (libopus codec, `.opus` extension). Whisper's accepted list is `['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm']` — `.opus` is absent. Fix: switched to `audio.m4a` with `-c:a aac -b:a 64k`. The `aac` codec is ffmpeg's native built-in (no external library needed, always available on Alpine). `m4a` is in Whisper's accepted list.
+
 ### Circular dependency: `@forkd/api` ↔ `@forkd/queue`
 
 `@forkd/api` must import `@forkd/queue` (to enqueue jobs). `@forkd/queue` must read encrypted config (to call Claude, Whisper, Places). Config reading (`getDecryptedConfigValue`) previously lived in `@forkd/api`, which would have created a cycle.
@@ -115,17 +135,48 @@ Fix: moved `packages/api/src/crypto.ts` and `packages/api/src/config/read.ts` to
 
 ## Key implementation decisions
 
-| Decision                                                       | Reason                                                                                                                     |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Worker bootstrapped via `instrumentation.ts`                   | Next.js 15 native, no Dockerfile CMD change, no WebSocket support needed at this scale                                     |
-| Split queue index — `importQueue` only in main export          | Prevents webpack from statically tracing playwright-core through the tRPC route import chain                               |
-| `getRedisOptions()` returns plain object, not IORedis instance | Avoids ioredis dual-version type clash when pnpm has two versions installed                                                |
-| `playwright-core` copied explicitly in Dockerfile              | Not traced by Next.js standalone file tracer (dynamic import + webpack external)                                           |
-| `confirmer.ts` re-implements Places fetch locally              | Avoids circular dependency; ~30 lines; the background confirmer is a different concern from the tRPC-facing Places adapter |
-| Python zipapp yt-dlp, not ELF binary                           | Alpine lacks glibc; zipapp runs via Alpine's `python3` without compatibility issues                                        |
-| `cuisineTypeId` left null on draft                             | Resolving a cuisine string to a UUID requires a DB lookup that adds fragility; user curates on the edit page               |
-| `attempts: 1` on BullMQ jobs                                   | Failed jobs surface their error to the user via `import_jobs.error_message`; retrying without user action is unhelpful     |
-| Rate limit: 5 imports/user/hr                                  | Prevents runaway API spend on a family app without a billing ceiling                                                       |
+| Decision                                                       | Reason                                                                                                                         |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Worker bootstrapped via `instrumentation.ts`                   | Next.js 15 native, no Dockerfile CMD change, no WebSocket support needed at this scale                                         |
+| Split queue index — `importQueue` only in main export          | Prevents webpack from statically tracing playwright-core through the tRPC route import chain                                   |
+| `getRedisOptions()` returns plain object, not IORedis instance | Avoids ioredis dual-version type clash when pnpm has two versions installed                                                    |
+| `playwright-core` copied explicitly in Dockerfile              | Not traced by Next.js standalone file tracer (dynamic import + webpack external)                                               |
+| `confirmer.ts` re-implements Places fetch locally              | Avoids circular dependency; ~30 lines; the background confirmer is a different concern from the tRPC-facing Places adapter     |
+| Python zipapp yt-dlp, not ELF binary                           | Alpine lacks glibc; zipapp runs via Alpine's `python3` without compatibility issues                                            |
+| `cuisineTypeId` left null on draft                             | Resolving a cuisine string to a UUID requires a DB lookup that adds fragility; user curates on the edit page                   |
+| `attempts: 1` on BullMQ jobs                                   | Failed jobs surface their error to the user via `import_jobs.error_message`; retrying without user action is unhelpful         |
+| Rate limit: 5 imports/user/hr                                  | Prevents runaway API spend on a family app without a billing ceiling                                                           |
+| `node:http` for Chrome `/json/version`, not `fetch`/undici     | Both fetch and undici derive Host from the URL and cannot override it; `node:http` lets you set an arbitrary Host header       |
+| URL transplant (parse + set hostname/port) vs. string-replace  | String-replace on `127.0.0.1`/`[::1]` misses `localhost` (which Chrome uses when Host is `localhost`); URL parse is exhaustive |
+| AAC/m4a for audio extraction, not libopus/.opus                | `.opus` is not in Whisper's accepted format list; `aac` is ffmpeg's native encoder — no Alpine package gap possible            |
+| Claude cuisine prompt: "infer aggressively from keywords"      | Without this instruction Claude returns empty string for obvious cues ("sushi" → left blank instead of "Japanese")             |
+
+---
+
+## Post-launch validation (first live test)
+
+Tested with a real TikTok URL (`https://www.tiktok.com/t/ZP8shLuDT/`) immediately after the three post-launch fixes landed. Full pipeline ran end-to-end:
+
+| Stage                      | Result                                         |
+| -------------------------- | ---------------------------------------------- |
+| Chrome scrape              | ✅ Page title + body text extracted            |
+| yt-dlp download            | ✅ Video downloaded                            |
+| ffmpeg audio               | ✅ `audio.m4a` produced (AAC)                  |
+| Whisper transcription      | ✅ Audio transcribed                           |
+| Claude extraction          | ✅ Name, address, state, description populated |
+| Google Places confirmation | ✅ Place ID, rating 4.7, lat/lng enriched      |
+| Draft restaurant created   | ✅ Redirected to edit page                     |
+
+**Extracted metadata (Sushi by SYC, Denver CO):**
+
+- Name: Sushi by SYC
+- Address: 1573 S Colorado Blvd, Denver, CO 80222, USA (from Google Places)
+- State: CO
+- Description: omakase with Chef Lee, 22 years experience, Michelin star background, à la carte + omakase options
+- Google rating: 4.7 / 5
+- Map pin rendered at correct location
+
+Post-test: draft restaurant deleted (DB cleanup done by user).
 
 ---
 
@@ -166,7 +217,14 @@ Fix: moved `packages/api/src/crypto.ts` and `packages/api/src/config/read.ts` to
 | `apps/web/next.config.ts`                                     | Add playwright-core, bullmq, ioredis to `serverExternalPackages`; add webpack externals for chromium-bidi and playwright-core |
 | `apps/web/src/app/restaurants/_components/RestaurantList.tsx` | Add Import button + ImportModal                                                                                               |
 | `docker/Dockerfile`                                           | Add ffmpeg, python3, yt-dlp to runner stage; explicitly copy playwright-core from builder                                     |
+| `docker-compose.yml`                                          | `CHROME_WS_ENDPOINT` → `CHROME_CDP_ENDPOINT` (HTTP URL); add `--remote-allow-origins=*` to chrome-headless command            |
+| `.env.example`                                                | `CHROME_WS_ENDPOINT` → `CHROME_CDP_ENDPOINT=http://chrome-headless:3000`                                                      |
 | `pnpm-workspace.yaml`                                         | Fix `msgpackr-extract` placeholder value → `true`                                                                             |
+| `packages/queue/src/pipeline/scraper.ts`                      | `node:http` + Host:localhost for /json/version; URL transplant for WS hostname+port (post-launch fix)                         |
+| `packages/queue/src/pipeline/audioExtractor.ts`               | libopus/.opus → aac/.m4a for Whisper compatibility (post-launch fix)                                                          |
+| `packages/queue/src/pipeline/extractorAi.ts`                  | Cuisine prompt: "infer aggressively from food keywords" (post-launch fix)                                                     |
+| `packages/queue/src/worker.ts`                                | Startup Chrome reachability self-check; `node:http` for Host override (post-launch fix)                                       |
+| `docs/master-requirements.md`                                 | `CHROME_WS_ENDPOINT` → `CHROME_CDP_ENDPOINT`; update chrome-headless command docs; add `--remote-allow-origins=*` note        |
 
 ---
 
