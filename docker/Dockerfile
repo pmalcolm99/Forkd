@@ -49,6 +49,14 @@ RUN pnpm --filter @forkd/web exec esbuild scripts/migrate.ts \
   --format=cjs \
   --outfile=.next/standalone/migrate.cjs
 
+# playwright-core is dynamically imported via instrumentation.ts at runtime.
+# Next.js standalone file tracing never sees it (dynamic import + webpack external),
+# so it's not copied into standalone/node_modules automatically. Stage it explicitly.
+RUN PW_SRC=$(find /app/node_modules/.pnpm -maxdepth 3 -type d \
+      -name 'playwright-core' -path '*/node_modules/playwright-core' \
+      | head -1) && \
+    [ -n "$PW_SRC" ] && cp -rL "$PW_SRC" /tmp/playwright-core
+
 # ── Stage 3: minimal production runner ─────────────────────────────────────
 FROM node:22-alpine AS runner
 
@@ -67,7 +75,16 @@ COPY --from=builder --chown=node:node /app/apps/web/public        ./apps/web/pub
 # Drizzle migration SQL files — referenced by migrate.js at path.join(cwd, "migrations")
 COPY --from=builder --chown=node:node /app/packages/db/migrations  ./migrations
 
-RUN apk add --no-cache vips libheif \
+# playwright-core: not auto-traced by Next.js (dynamic import + webpack external).
+# Copied from builder stage where it was staged in /tmp/playwright-core.
+COPY --from=builder --chown=node:node /tmp/playwright-core ./node_modules/playwright-core
+
+ARG YT_DLP_VERSION=2025.01.15
+
+RUN apk add --no-cache vips libheif ffmpeg python3 \
+    && wget -qO /usr/local/bin/yt-dlp \
+       "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
+    && chmod +x /usr/local/bin/yt-dlp \
     && mkdir -p /app/uploads \
     && chown node:node /app/uploads
 

@@ -14,6 +14,7 @@
     "@forkd/api": "workspace:*",
     "@forkd/auth": "workspace:*",
     "@forkd/db": "workspace:*",
+    "@forkd/queue": "workspace:*",
     "@forkd/shared": "workspace:*",
     "@forkd/trpc": "workspace:*",
     "@forkd/ui": "workspace:*",

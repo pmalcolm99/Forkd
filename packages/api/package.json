@@ -18,7 +18,8 @@
     "zod": "^3.24.0",
     "@forkd/db": "workspace:*",
     "@forkd/auth": "workspace:*",
-    "@forkd/shared": "workspace:*"
+    "@forkd/shared": "workspace:*",
+    "@forkd/queue": "workspace:*"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^3.0.0",

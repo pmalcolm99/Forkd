@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Utensils } from "lucide-react";
+import { ImportModal } from "./ImportModal";
 import {
   Button,
   Chip,
@@ -29,6 +30,7 @@ import { RestaurantFilterControls } from "@/components/RestaurantFilterControls"
 export function RestaurantList() {
   const { filters, updateFilter } = useRestaurantFilters();
   const [searchValue, setSearchValue] = useState(filters.search ?? "");
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -51,10 +53,14 @@ export function RestaurantList() {
           <Button as={Link} href="/map" variant="flat">
             Map view
           </Button>
+          <Button variant="flat" onPress={() => setImportOpen(true)}>
+            Import from social
+          </Button>
           <Button as={Link} href="/restaurants/new" color="primary">
             Add restaurant
           </Button>
         </div>
+        <ImportModal isOpen={importOpen} onClose={() => setImportOpen(false)} />
       </div>
 
       <RestaurantFilterControls

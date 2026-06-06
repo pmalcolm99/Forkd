@@ -4,4 +4,5 @@ packages:
 allowBuilds:
   "@heroui/shared-utils": true
   esbuild: true
+  msgpackr-extract: true
   sharp: true
