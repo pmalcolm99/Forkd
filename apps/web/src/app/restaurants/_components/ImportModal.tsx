@@ -25,8 +25,11 @@ const STATUS_LABELS: Record<string, string> = {
   transcribing: "Transcribing audio...",
   extracting: "Extracting restaurant info...",
   completed: "Done!",
+  duplicate_found: "Already in your list",
   failed: "Failed",
 };
+
+const TERMINAL_STATUSES = new Set(["completed", "failed", "duplicate_found"]);
 
 export function ImportModal({ isOpen, onClose }: Props) {
   const router = useRouter();
@@ -49,7 +52,7 @@ export function ImportModal({ isOpen, onClose }: Props) {
       enabled: !!jobId,
       refetchInterval: (query) => {
         const s = query.state.data?.status;
-        return s === "completed" || s === "failed" ? false : 2000;
+        return s && TERMINAL_STATUSES.has(s) ? false : 2000;
       },
     }
   );
@@ -61,6 +64,9 @@ export function ImportModal({ isOpen, onClose }: Props) {
 
   if (status === "completed" && restaurantId) {
     router.push(`/restaurants/${restaurantId}/edit`);
+  }
+  if (status === "duplicate_found" && restaurantId) {
+    router.push(`/restaurants/${restaurantId}/edit?duplicate=1`);
   }
 
   function handleClose() {
@@ -75,7 +81,7 @@ export function ImportModal({ isOpen, onClose }: Props) {
     startMutation.mutate({ url });
   }
 
-  const isPolling = !!jobId && status !== "completed" && status !== "failed";
+  const isPolling = !!jobId && !(status && TERMINAL_STATUSES.has(status));
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="md">

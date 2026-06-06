@@ -9,6 +9,7 @@ export const importStatusEnum = pgEnum("import_status", [
   "extracting",
   "completed",
   "failed",
+  "duplicate_found",
 ]);
 
 export const importJobs = pgTable("import_jobs", {

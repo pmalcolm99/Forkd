@@ -66,6 +66,27 @@ async function processImport(data: ImportJobData): Promise<void> {
     const query = [extracted.name, extracted.address, extracted.state].filter(Boolean).join(" ");
     const confirmed = await confirmWithGooglePlaces(query, db);
 
+    // ── Duplicate check — skip insert if place already exists ─────────────────
+    if (confirmed?.placeId) {
+      const [existing] = await db
+        .select({ id: restaurants.id })
+        .from(restaurants)
+        .where(eq(restaurants.googlePlaceId, confirmed.placeId))
+        .limit(1);
+
+      if (existing) {
+        await setStatus(jobId, "duplicate_found", "Already in your list", {
+          restaurantId: existing.id,
+          completedAt: new Date(),
+        });
+        logger.info(
+          { jobId, existingId: existing.id },
+          "Import duplicate — restaurant already exists"
+        );
+        return;
+      }
+    }
+
     // ── Create draft restaurant ───────────────────────────────────────────────
     const address = confirmed?.formattedAddress ?? (extracted.address || `${extracted.state}, USA`);
 

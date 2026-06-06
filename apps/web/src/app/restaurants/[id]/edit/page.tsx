@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Alert, Spinner } from "@heroui/react";
 import type { CreateRestaurantInput } from "@forkd/shared";
 import { restaurantRowToInput } from "@forkd/shared";
@@ -10,6 +10,8 @@ import { RestaurantForm } from "../../_components/RestaurantForm";
 export default function EditRestaurantPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDuplicate = searchParams.get("duplicate") === "1";
   const utils = trpc.useUtils();
 
   const { data, isLoading, error } = trpc.restaurants.get.useQuery({ id });
@@ -44,6 +46,12 @@ export default function EditRestaurantPage() {
   return (
     <main className="mx-auto max-w-xl p-6">
       <h1 className="mb-6 text-2xl font-bold">Edit restaurant</h1>
+      {isDuplicate && (
+        <Alert color="warning" className="mb-4">
+          This restaurant is already in your list — you can update its details below or just close
+          this page.
+        </Alert>
+      )}
       <RestaurantForm
         defaultValues={restaurantRowToInput(data)}
         onSubmit={handleSubmit}
