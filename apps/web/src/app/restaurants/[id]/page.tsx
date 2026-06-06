@@ -10,6 +10,7 @@ import {
 import { serverTrpc } from "@/lib/trpc/server";
 import { DeleteRestaurantButton } from "./_components/DeleteRestaurantButton";
 import { RatingDisplay } from "./_components/RatingDisplay";
+import { RefreshGoogleRatingButton } from "./_components/RefreshGoogleRatingButton";
 import { ReviewCard } from "./_components/ReviewCard";
 import { AddReviewButton } from "./_components/AddReviewButton";
 import { PhotoGallery } from "./_components/PhotoGallery";
@@ -30,6 +31,8 @@ export default async function RestaurantDetailPage({ params }: Props) {
     if (err instanceof TRPCError && err.code === "NOT_FOUND") notFound();
     throw err;
   }
+
+  const { configured: googlePlacesConfigured } = await caller.restaurants.googlePlacesConfigured();
 
   let currentUser: Awaited<ReturnType<typeof caller.auth.me>> | null = null;
   try {
@@ -67,11 +70,16 @@ export default async function RestaurantDetailPage({ params }: Props) {
         <RatingDisplay average={row.familyAverage} count={row.reviewCount} />
       </div>
 
-      <div className="mb-4 flex gap-3">
+      <div className="mb-4 flex flex-wrap gap-3">
         <LinkButton href={`/restaurants/${id}/edit`} variant="flat">
           Edit
         </LinkButton>
         {canDelete && <DeleteRestaurantButton id={id} />}
+        <RefreshGoogleRatingButton
+          restaurantId={id}
+          googlePlaceId={row.googlePlaceId}
+          googlePlacesConfigured={googlePlacesConfigured}
+        />
       </div>
 
       <div className="mb-6 rounded-lg border p-4">
@@ -107,6 +115,16 @@ export default async function RestaurantDetailPage({ params }: Props) {
               <dd>{row.description}</dd>
             </>
           )}
+
+          <dt className="font-medium text-gray-500">Google rating</dt>
+          <dd>
+            {row.googleRating !== null ? `${parseFloat(row.googleRating)} / 5` : "—"}
+            {row.googleRatingFetchedAt && (
+              <span className="ml-2 text-xs text-gray-400">
+                (updated {formatRelativeTime(row.googleRatingFetchedAt)})
+              </span>
+            )}
+          </dd>
         </dl>
       </div>
 

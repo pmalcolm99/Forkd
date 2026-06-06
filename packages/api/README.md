@@ -48,6 +48,15 @@ After regenerating, update the `SILENCE_MP3_BASE64` constant in `src/routers/con
 base64 -i src/external/test-fixtures/silence.mp3
 ```
 
+## Google Places API key security
+
+The Google Places API key is stored encrypted in the `app_config` table and set through the admin UI — it is never committed to source. However, because this repo is public, an accidentally committed key could be abused. To limit cost exposure:
+
+1. **Restrict the key to the server's IP.** In the Google Cloud Console → Credentials → your API key → "Application restrictions" → "IP addresses". Add the server's public egress IP. This prevents the key from being used from any other origin even if leaked.
+2. **Restrict the key to a single API.** Under "API restrictions" → "Restrict key" → select "Places API (New)" only.
+3. **Enable a billing alert.** In Google Cloud Billing, set a budget alert at a low threshold (e.g., $10/month). Google's $200/month free credit covers family-scale usage, but an unrestricted key is a cost risk.
+4. **Rotate the key** by re-entering it in the admin UI (no restart needed; the value is read at call time).
+
 ## Testing
 
 ```

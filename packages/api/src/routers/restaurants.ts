@@ -5,6 +5,7 @@ import { restaurantPhotos, restaurantReviews, restaurants } from "@forkd/db";
 import { createRestaurantInput, listRestaurantsInput, updateRestaurantInput } from "@forkd/shared";
 import { protectedProcedure, router } from "../trpc";
 import { suggestRestaurantMetadata } from "../ai/anthropic";
+import { searchPlaces, getPlaceRating } from "../external/google-places";
 import { getDecryptedConfigValue } from "../config/read";
 
 export const restaurantsRouter = router({
@@ -137,15 +138,23 @@ export const restaurantsRouter = router({
     }),
 
   create: protectedProcedure.input(createRestaurantInput).mutation(async ({ input, ctx }) => {
+    const { latitude, longitude, googleRating, ...rest } = input;
     const [row] = await ctx.db
       .insert(restaurants)
-      .values({ ...input, addedByUserId: ctx.user.id })
+      .values({
+        ...rest,
+        addedByUserId: ctx.user.id,
+        latitude: latitude != null ? String(latitude) : null,
+        longitude: longitude != null ? String(longitude) : null,
+        googleRating: googleRating != null ? String(googleRating) : null,
+        googleRatingFetchedAt: googleRating != null ? new Date() : undefined,
+      })
       .returning();
     return row!;
   }),
 
   update: protectedProcedure.input(updateRestaurantInput).mutation(async ({ input, ctx }) => {
-    const { id, ...fields } = input;
+    const { id, latitude, longitude, googleRating, ...rest } = input;
     const existing = await ctx.db.query.restaurants.findFirst({
       where: and(eq(restaurants.id, id), isNull(restaurants.deletedAt)),
     });
@@ -153,7 +162,19 @@ export const restaurantsRouter = router({
 
     const [updated] = await ctx.db
       .update(restaurants)
-      .set({ ...fields, updatedAt: new Date() })
+      .set({
+        ...rest,
+        latitude: latitude !== undefined ? (latitude != null ? String(latitude) : null) : undefined,
+        longitude:
+          longitude !== undefined ? (longitude != null ? String(longitude) : null) : undefined,
+        googleRating:
+          googleRating !== undefined
+            ? googleRating != null
+              ? String(googleRating)
+              : null
+            : undefined,
+        updatedAt: new Date(),
+      })
       .where(eq(restaurants.id, id))
       .returning();
     return updated!;
@@ -184,6 +205,49 @@ export const restaurantsRouter = router({
     const key = await getDecryptedConfigValue("ai.claude.api_key", ctx.db);
     return { configured: !!key };
   }),
+
+  googlePlacesConfigured: protectedProcedure.query(async ({ ctx }) => {
+    const key = await getDecryptedConfigValue("google_places.api_key", ctx.db);
+    return { configured: !!key };
+  }),
+
+  searchGooglePlaces: protectedProcedure
+    .input(z.object({ query: z.string().min(1).max(200) }))
+    .query(async ({ input, ctx }) => searchPlaces(input.query, ctx.db)),
+
+  refreshGoogleRating: protectedProcedure
+    .input(z.object({ restaurantId: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      const row = await ctx.db.query.restaurants.findFirst({
+        where: and(eq(restaurants.id, input.restaurantId), isNull(restaurants.deletedAt)),
+      });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+      if (!row.googlePlaceId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No Google Place ID stored for this restaurant",
+        });
+      }
+      const result = await getPlaceRating(row.googlePlaceId, ctx.db);
+      if (result.status === "not_configured") {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Google Places API key not configured",
+        });
+      }
+      if (result.status === "failed") {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error });
+      }
+      await ctx.db
+        .update(restaurants)
+        .set({
+          googleRating: result.rating !== null ? String(result.rating) : null,
+          googleRatingFetchedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(restaurants.id, input.restaurantId));
+      return { ok: true };
+    }),
 
   suggestMetadata: protectedProcedure
     .input(

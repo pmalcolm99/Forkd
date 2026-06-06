@@ -6,6 +6,7 @@ import { encrypt } from "../crypto";
 import { adminProcedure, ownerProcedure, router } from "../trpc";
 import { CONFIG_KEYS, CONFIG_KEY_MAP, configKeyEnum } from "../config/keys";
 import { getDecryptedConfigValue } from "../config/read";
+import { searchPlaces } from "../external/google-places";
 
 // 0.5-second silent WAV (16kHz mono 16-bit PCM) — embedded for standalone-build
 // compatibility (packages/ files are not copied into Next.js standalone output).
@@ -165,27 +166,10 @@ export const configRouter = router({
   }),
 
   testGooglePlaces: adminProcedure.mutation(async ({ ctx }) => {
-    const apiKey = await getDecryptedConfigValue("google_places.api_key", ctx.db);
-    if (!apiKey) return { ok: false, error: "API key not configured" };
-
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), 10_000);
-
-    try {
-      const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=pizza+near+New+York&key=${apiKey}`;
-      const resp = await fetch(url, { signal: ac.signal });
-      clearTimeout(timer);
-      if (!resp.ok) return { ok: false, error: `API returned ${resp.status}` };
-      const json = (await resp.json()) as { status?: string };
-      if (json.status === "REQUEST_DENIED") return { ok: false, error: "Invalid API key" };
-      return { ok: true };
-    } catch (err) {
-      clearTimeout(timer);
-      if (err instanceof Error && err.name === "AbortError") {
-        return { ok: false, error: "Request timed out" };
-      }
-      return { ok: false, error: "Connection failed" };
-    }
+    const result = await searchPlaces("pizza near New York", ctx.db);
+    if (result.status === "not_configured") return { ok: false, error: "API key not configured" };
+    if (result.status === "failed") return { ok: false, error: result.error };
+    return { ok: true };
   }),
 
   restartServer: ownerProcedure.mutation(({ ctx }) => {

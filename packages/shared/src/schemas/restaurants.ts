@@ -72,6 +72,10 @@ export const createRestaurantInput = z.object({
   description: z.string().max(2000).nullable().optional(),
   website: z.string().url().nullable().optional(),
   status: restaurantStatusEnum.default("want_to_try"),
+  googlePlaceId: z.string().nullable().optional(),
+  googleRating: z.number().min(0).max(5).nullable().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
 });
 export type CreateRestaurantInput = z.infer<typeof createRestaurantInput>;
 
