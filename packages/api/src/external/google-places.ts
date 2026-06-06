@@ -19,7 +19,7 @@ export type SearchPlacesResult =
   | { status: "failed"; error: string };
 
 export type GetPlaceRatingResult =
-  | { status: "success"; rating: number | null }
+  | { status: "success"; rating: number | null; latitude: number | null; longitude: number | null }
   | { status: "not_configured" }
   | { status: "failed"; error: string };
 
@@ -39,6 +39,7 @@ const searchResponseSchema = z.object({
 const ratingResponseSchema = z.object({
   id: z.string(),
   rating: z.number().optional(),
+  location: z.object({ latitude: z.number(), longitude: z.number() }).optional(),
 });
 
 const TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
@@ -121,7 +122,7 @@ export async function getPlaceRating(
       headers: {
         "X-Goog-Api-Key": apiKey,
         // Place Details field mask has NO "places." prefix (unlike text search)
-        "X-Goog-FieldMask": "id,rating",
+        "X-Goog-FieldMask": "id,rating,location",
       },
       signal: ac.signal,
     });
@@ -145,7 +146,12 @@ export async function getPlaceRating(
       return { status: "failed", error: "Could not parse response" };
     }
 
-    return { status: "success", rating: parsed.data.rating ?? null };
+    return {
+      status: "success",
+      rating: parsed.data.rating ?? null,
+      latitude: parsed.data.location?.latitude ?? null,
+      longitude: parsed.data.location?.longitude ?? null,
+    };
   } catch (err) {
     clearTimeout(timer);
     logger.error(

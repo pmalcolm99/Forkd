@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Utensils } from "lucide-react";
 import {
   Button,
   Chip,
@@ -65,64 +66,120 @@ export function RestaurantList() {
         onSearchValueChange={setSearchValue}
       />
 
-      <Table aria-label="Restaurants">
-        <TableHeader>
-          <TableColumn className="w-16"> </TableColumn>
-          <TableColumn>Name</TableColumn>
-          <TableColumn>Cuisine</TableColumn>
-          <TableColumn>State</TableColumn>
-          <TableColumn>Status</TableColumn>
-          <TableColumn>Rating</TableColumn>
-          <TableColumn>Added by</TableColumn>
-          <TableColumn>Added</TableColumn>
-        </TableHeader>
-        <TableBody
-          isLoading={isLoading}
-          loadingContent={<Spinner />}
-          emptyContent={<span className="text-gray-400">No restaurants found.</span>}
-        >
+      {/* Mobile card list */}
+      <div className="sm:hidden">
+        {isLoading && (
+          <div className="flex justify-center py-12">
+            <Spinner />
+          </div>
+        )}
+        {!isLoading && (data?.items ?? []).length === 0 && (
+          <p className="py-8 text-center text-gray-400">No restaurants found.</p>
+        )}
+        <div className="flex flex-col gap-3">
           {(data?.items ?? []).map((row) => {
             const statusColor = RESTAURANT_STATUS_COLORS[row.status];
-            const addedBy = row.addedBy
-              ? [row.addedBy.firstName, row.addedBy.lastName].filter(Boolean).join(" ")
-              : "—";
+            const ratingDisplay = formatFamilyAverage(row.familyAverage, row.reviewCount).display;
             return (
-              <TableRow key={row.id}>
-                <TableCell>
-                  {row.coverPhoto ? (
-                    <img
-                      src={photoUrl(row.id, row.coverPhoto.id, "thumb")}
-                      alt=""
-                      className="h-12 w-12 rounded object-cover"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded bg-gray-100" />
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Link href={`/restaurants/${row.id}`} className="font-medium underline">
-                    {row.name}
-                  </Link>
-                </TableCell>
-                <TableCell>{row.cuisineType?.name ?? "—"}</TableCell>
-                <TableCell>{row.state}</TableCell>
-                <TableCell>
-                  <Chip color={statusColor.color} className={statusColor.className} size="sm">
-                    {RESTAURANT_STATUS_LABELS[row.status]}
-                  </Chip>
-                </TableCell>
-                <TableCell>
-                  <Chip size="sm" variant="flat" color="default">
-                    {formatFamilyAverage(row.familyAverage, row.reviewCount).display}
-                  </Chip>
-                </TableCell>
-                <TableCell>{addedBy}</TableCell>
-                <TableCell>{formatRelativeTime(row.createdAt)}</TableCell>
-              </TableRow>
+              <Link
+                key={row.id}
+                href={`/restaurants/${row.id}`}
+                className="flex items-center gap-3 rounded-lg border p-3"
+              >
+                {row.coverPhoto ? (
+                  <img
+                    src={photoUrl(row.id, row.coverPhoto.id, "thumb")}
+                    alt=""
+                    className="h-14 w-14 shrink-0 rounded object-cover"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded bg-gray-100">
+                    <Utensils className="h-5 w-5 text-gray-400" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{row.name}</p>
+                  <p className="truncate text-sm text-gray-500">
+                    {[row.cuisineType?.name, row.state].filter(Boolean).join(" · ")}
+                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    <Chip color={statusColor.color} className={statusColor.className} size="sm">
+                      {RESTAURANT_STATUS_LABELS[row.status]}
+                    </Chip>
+                    <Chip size="sm" variant="flat" color="default">
+                      {ratingDisplay}
+                    </Chip>
+                  </div>
+                </div>
+              </Link>
             );
           })}
-        </TableBody>
-      </Table>
+        </div>
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block">
+        <Table aria-label="Restaurants">
+          <TableHeader>
+            <TableColumn className="w-16"> </TableColumn>
+            <TableColumn>Name</TableColumn>
+            <TableColumn>Cuisine</TableColumn>
+            <TableColumn>State</TableColumn>
+            <TableColumn>Status</TableColumn>
+            <TableColumn>Rating</TableColumn>
+            <TableColumn>Added by</TableColumn>
+            <TableColumn>Added</TableColumn>
+          </TableHeader>
+          <TableBody
+            isLoading={isLoading}
+            loadingContent={<Spinner />}
+            emptyContent={<span className="text-gray-400">No restaurants found.</span>}
+          >
+            {(data?.items ?? []).map((row) => {
+              const statusColor = RESTAURANT_STATUS_COLORS[row.status];
+              const addedBy = row.addedBy
+                ? [row.addedBy.firstName, row.addedBy.lastName].filter(Boolean).join(" ")
+                : "—";
+              return (
+                <TableRow key={row.id}>
+                  <TableCell>
+                    {row.coverPhoto ? (
+                      <img
+                        src={photoUrl(row.id, row.coverPhoto.id, "thumb")}
+                        alt=""
+                        className="h-12 w-12 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100">
+                        <Utensils className="h-5 w-5 text-gray-400" />
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Link href={`/restaurants/${row.id}`} className="font-medium underline">
+                      {row.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{row.cuisineType?.name ?? "—"}</TableCell>
+                  <TableCell>{row.state}</TableCell>
+                  <TableCell>
+                    <Chip color={statusColor.color} className={statusColor.className} size="sm">
+                      {RESTAURANT_STATUS_LABELS[row.status]}
+                    </Chip>
+                  </TableCell>
+                  <TableCell>
+                    <Chip size="sm" variant="flat" color="default">
+                      {formatFamilyAverage(row.familyAverage, row.reviewCount).display}
+                    </Chip>
+                  </TableCell>
+                  <TableCell>{addedBy}</TableCell>
+                  <TableCell>{formatRelativeTime(row.createdAt)}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
 
       {totalPages > 1 && (
         <div className="mt-4 flex justify-center">

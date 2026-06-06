@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "./globals.css";
 import { Providers } from "./providers";
 import { serverTrpc } from "@/lib/trpc/server";
+import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
   title: "Forkd",
@@ -13,32 +13,20 @@ const isDev = process.env.NODE_ENV !== "production";
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let isAdmin = false;
+  let userName: string | null = null;
   try {
     const caller = await serverTrpc();
     const me = await caller.auth.me();
     isAdmin = !!me.isAdmin || !!me.isOwner;
+    userName = me.firstName ?? null;
   } catch {
-    // Not authenticated — no Admin link shown.
+    // Not authenticated — header shows generic menu label.
   }
 
   return (
     <html lang="en" className="light">
       <body>
-        <nav className="flex justify-end gap-4 bg-gray-100 px-4 py-1 text-sm">
-          {isDev && (
-            <Link href="/dev/select-user" className="underline text-yellow-700">
-              Switch user
-            </Link>
-          )}
-          {isAdmin && (
-            <Link href="/admin" className="underline">
-              Admin
-            </Link>
-          )}
-          <a href="/api/auth/sign-out" className="underline">
-            Sign out
-          </a>
-        </nav>
+        <Header userName={userName} isAdmin={isAdmin} isDev={isDev} />
         <Providers>{children}</Providers>
       </body>
     </html>

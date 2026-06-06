@@ -9,6 +9,7 @@ import {
 } from "@forkd/shared";
 import { serverTrpc } from "@/lib/trpc/server";
 import { DeleteRestaurantButton } from "./_components/DeleteRestaurantButton";
+import { DetailMap } from "./_components/DetailMap";
 import { RatingDisplay } from "./_components/RatingDisplay";
 import { RefreshGoogleRatingButton } from "./_components/RefreshGoogleRatingButton";
 import { ReviewCard } from "./_components/ReviewCard";
@@ -119,7 +120,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
           {row.description && (
             <>
               <dt className="font-medium text-gray-500">Description</dt>
-              <dd>{row.description}</dd>
+              <dd className="max-w-prose">{row.description}</dd>
             </>
           )}
 
@@ -135,9 +136,21 @@ export default async function RestaurantDetailPage({ params }: Props) {
         </dl>
       </div>
 
-      <p className="mb-8 text-sm text-gray-400">
+      <p className="mb-4 text-sm text-gray-400">
         Added{addedBy ? ` by ${addedBy}` : ""} · {formatRelativeTime(row.createdAt)}
       </p>
+
+      {row.latitude !== null && row.longitude !== null && (
+        <div className="mb-8 overflow-hidden rounded-lg border">
+          <DetailMap
+            id={row.id}
+            name={row.name}
+            status={row.status}
+            latitude={row.latitude}
+            longitude={row.longitude}
+          />
+        </div>
+      )}
 
       <section className="mb-8">
         <h2 className="mb-4 text-xl font-semibold">Reviews</h2>

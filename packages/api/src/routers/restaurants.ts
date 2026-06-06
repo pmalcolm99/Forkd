@@ -243,6 +243,9 @@ export const restaurantsRouter = router({
         .set({
           googleRating: result.rating !== null ? String(result.rating) : null,
           googleRatingFetchedAt: new Date(),
+          ...(result.latitude !== null && result.longitude !== null
+            ? { latitude: String(result.latitude), longitude: String(result.longitude) }
+            : {}),
           updatedAt: new Date(),
         })
         .where(eq(restaurants.id, input.restaurantId));

@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@heroui/react";
+import { formatRelativeTime } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
 
 type UserRow = {
@@ -130,7 +131,11 @@ export function UsersTable({ users, currentUserId, isOwner }: UsersTableProps) {
               <TableCell>{u.name}</TableCell>
               <TableCell>{u.email}</TableCell>
               <TableCell>{roleBadge(u)}</TableCell>
-              <TableCell>{u.createdAt.toLocaleDateString()}</TableCell>
+              <TableCell>
+                <span title={u.createdAt.toLocaleDateString()}>
+                  {formatRelativeTime(u.createdAt)}
+                </span>
+              </TableCell>
               <TableCell>
                 {isOwner && !u.isOwner && u.id !== currentUserId ? (
                   <div className="flex gap-2">

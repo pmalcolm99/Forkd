@@ -1,7 +1,14 @@
 "use client";
 
 import { Input, Select, SelectItem } from "@heroui/react";
-import { RESTAURANT_STATUS_LABELS, US_STATES, type ListRestaurantsInput } from "@forkd/shared";
+import {
+  RESTAURANT_STATUS_LABELS,
+  US_STATES,
+  restaurantStatusEnum,
+  type ListRestaurantsInput,
+} from "@forkd/shared";
+
+const ALL_STATUSES = restaurantStatusEnum.options;
 
 interface Cuisine {
   id: string;
@@ -46,10 +53,11 @@ export function RestaurantFilterControls({
         placeholder="Status"
         className="w-52"
         selectionMode="multiple"
-        selectedKeys={new Set(filters.status ?? [])}
+        selectedKeys={new Set(filters.status ?? ALL_STATUSES)}
         onSelectionChange={(keys) => {
           const vals = Array.from(keys) as string[];
-          updateFilter("status", vals.length ? vals : undefined);
+          const isAll = vals.length === ALL_STATUSES.length;
+          updateFilter("status", isAll ? undefined : vals.length ? vals : undefined);
         }}
       >
         {Object.entries(RESTAURANT_STATUS_LABELS).map(([k, label]) => (

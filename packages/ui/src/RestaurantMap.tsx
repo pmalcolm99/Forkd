@@ -2,7 +2,7 @@
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
 import {
   RESTAURANT_STATUS_PIN_COLORS,
   RESTAURANT_STATUS_LABELS,
@@ -19,17 +19,7 @@ export interface MapRestaurant {
 
 interface Props {
   restaurants: MapRestaurant[];
-}
-
-function makeIcon(status: RestaurantStatus): L.DivIcon {
-  const color = RESTAURANT_STATUS_PIN_COLORS[status];
-  return L.divIcon({
-    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>`,
-    className: "",
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-    popupAnchor: [0, -10],
-  });
+  height?: string;
 }
 
 interface FitBoundsProps {
@@ -54,19 +44,25 @@ function FitBounds({ restaurants }: FitBoundsProps) {
   return null;
 }
 
-export function RestaurantMap({ restaurants }: Props) {
+export function RestaurantMap({ restaurants, height = "600px" }: Props) {
   return (
-    <MapContainer center={[39.83, -98.58]} zoom={4} style={{ height: "600px", width: "100%" }}>
+    <MapContainer center={[39.83, -98.58]} zoom={4} style={{ height, width: "100%" }}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
       <FitBounds restaurants={restaurants} />
       {restaurants.map((r) => (
-        <Marker
+        <CircleMarker
           key={r.id}
-          position={[parseFloat(r.latitude), parseFloat(r.longitude)]}
-          icon={makeIcon(r.status)}
+          center={[parseFloat(r.latitude), parseFloat(r.longitude)]}
+          radius={8}
+          pathOptions={{
+            fillColor: RESTAURANT_STATUS_PIN_COLORS[r.status],
+            fillOpacity: 1,
+            color: "white",
+            weight: 2,
+          }}
         >
           <Popup>
             <div>
@@ -77,7 +73,7 @@ export function RestaurantMap({ restaurants }: Props) {
               </a>
             </div>
           </Popup>
-        </Marker>
+        </CircleMarker>
       ))}
     </MapContainer>
   );

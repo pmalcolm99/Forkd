@@ -48,7 +48,7 @@ export function RefreshGoogleRatingButton({
             mutate({ restaurantId });
           }}
         >
-          Refresh Google rating
+          Refresh metadata
         </Button>
       </Tooltip>
       {error && <p className="text-sm text-danger">{error}</p>}
