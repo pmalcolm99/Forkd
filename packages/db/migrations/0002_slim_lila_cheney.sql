@@ -1,0 +1,2 @@
+ALTER TABLE "restaurants" DROP CONSTRAINT "restaurants_google_place_id_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "restaurants_google_place_id_unique" ON "restaurants" USING btree ("google_place_id") WHERE "restaurants"."deleted_at" IS NULL;

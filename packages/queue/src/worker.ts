@@ -3,7 +3,7 @@ import http from "node:http";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db, importJobs, restaurants } from "@forkd/db";
 import { logger } from "@forkd/shared";
 import { getRedisOptions } from "./redis";
@@ -66,12 +66,12 @@ async function processImport(data: ImportJobData): Promise<void> {
     const query = [extracted.name, extracted.address, extracted.state].filter(Boolean).join(" ");
     const confirmed = await confirmWithGooglePlaces(query, db);
 
-    // ── Duplicate check — skip insert if place already exists ─────────────────
+    // ── Duplicate check — skip insert if a live (non-deleted) row exists ────────
     if (confirmed?.placeId) {
       const [existing] = await db
         .select({ id: restaurants.id })
         .from(restaurants)
-        .where(eq(restaurants.googlePlaceId, confirmed.placeId))
+        .where(and(eq(restaurants.googlePlaceId, confirmed.placeId), isNull(restaurants.deletedAt)))
         .limit(1);
 
       if (existing) {
