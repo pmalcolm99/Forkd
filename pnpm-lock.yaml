@@ -168,6 +168,9 @@ importers:
       drizzle-orm:
         specifier: ^0.41.0
         version: 0.41.0(@types/pg@8.20.0)(kysely@0.28.17)(pg@8.20.0)
+      sharp:
+        specifier: ^0.33.0
+        version: 0.33.5
       superjson:
         specifier: ^2.2.2
         version: 2.2.6
@@ -264,6 +267,9 @@ importers:
       playwright-core:
         specifier: ^1.50.0
         version: 1.60.0
+      sharp:
+        specifier: ^0.33.0
+        version: 0.33.5
       zod:
         specifier: ^3.24.0
         version: 3.25.76

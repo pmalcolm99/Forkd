@@ -108,7 +108,13 @@ describe("getPlaceRating", () => {
     mockFetch.mockReturnValueOnce(makeFetchResponse(200, { id: "ChIJtest", rating: 4.3 }));
     const { getPlaceRating } = await import("./google-places");
     const result = await getPlaceRating("ChIJtest", {} as never);
-    expect(result).toEqual({ status: "success", rating: 4.3, latitude: null, longitude: null });
+    expect(result).toEqual({
+      status: "success",
+      rating: 4.3,
+      latitude: null,
+      longitude: null,
+      photoName: null,
+    });
   });
 
   it("returns success with null rating when rating field is absent", async () => {
@@ -116,7 +122,13 @@ describe("getPlaceRating", () => {
     mockFetch.mockReturnValueOnce(makeFetchResponse(200, { id: "ChIJtest" }));
     const { getPlaceRating } = await import("./google-places");
     const result = await getPlaceRating("ChIJtest", {} as never);
-    expect(result).toEqual({ status: "success", rating: null, latitude: null, longitude: null });
+    expect(result).toEqual({
+      status: "success",
+      rating: null,
+      latitude: null,
+      longitude: null,
+      photoName: null,
+    });
   });
 
   it("returns success with location when present", async () => {
@@ -130,7 +142,13 @@ describe("getPlaceRating", () => {
     );
     const { getPlaceRating } = await import("./google-places");
     const result = await getPlaceRating("ChIJtest", {} as never);
-    expect(result).toEqual({ status: "success", rating: 4.3, latitude: 39.74, longitude: -105.09 });
+    expect(result).toEqual({
+      status: "success",
+      rating: 4.3,
+      latitude: 39.74,
+      longitude: -105.09,
+      photoName: null,
+    });
   });
 
   it("returns failed on non-200 response", async () => {

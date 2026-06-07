@@ -10,6 +10,7 @@ export type ConfirmedPlace = {
   latitude: number;
   longitude: number;
   rating: number | null;
+  photoName: string | null;
 };
 
 const placeSchema = z.object({
@@ -18,6 +19,7 @@ const placeSchema = z.object({
   formattedAddress: z.string(),
   location: z.object({ latitude: z.number(), longitude: z.number() }),
   rating: z.number().optional(),
+  photos: z.array(z.object({ name: z.string() })).optional(),
 });
 
 const searchResponseSchema = z.object({
@@ -44,7 +46,7 @@ export async function confirmWithGooglePlaces(
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask":
-          "places.id,places.displayName,places.formattedAddress,places.location,places.rating",
+          "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.photos",
       },
       body: JSON.stringify({ textQuery: query, maxResultCount: 1 }),
       signal: ac.signal,
@@ -71,6 +73,7 @@ export async function confirmWithGooglePlaces(
       latitude: p.location.latitude,
       longitude: p.location.longitude,
       rating: p.rating ?? null,
+      photoName: p.photos?.[0]?.name ?? null,
     };
   } catch (err) {
     clearTimeout(timer);

@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { and, eq, isNull } from "drizzle-orm";
-import { db, importJobs, restaurants } from "@forkd/db";
+import { db, importJobs, restaurants, getDecryptedConfigValue } from "@forkd/db";
 import { logger } from "@forkd/shared";
 import { getRedisOptions } from "./redis";
 import type { ImportJobData } from "./queue";
@@ -14,6 +14,7 @@ import { extractAudio } from "./pipeline/audioExtractor";
 import { transcribeAudio } from "./pipeline/transcriber";
 import { extractRestaurantInfo } from "./pipeline/extractorAi";
 import { confirmWithGooglePlaces } from "./pipeline/confirmer";
+import { fetchAndStoreGooglePhoto } from "./pipeline/googlePhoto";
 
 async function setStatus(
   jobId: string,
@@ -109,6 +110,16 @@ async function processImport(data: ImportJobData): Promise<void> {
       .returning();
 
     if (!newRestaurant) throw new Error("Restaurant insert returned no rows");
+
+    // Best-effort: fetch first Google Places photo. Never blocks restaurant creation.
+    if (confirmed?.photoName) {
+      const apiKey = await getDecryptedConfigValue("google_places.api_key", db);
+      if (apiKey) {
+        await fetchAndStoreGooglePhoto(confirmed.photoName, apiKey, newRestaurant.id, db).catch(
+          (err) => logger.warn({ err, jobId }, "Google Places photo fetch failed — skipping")
+        );
+      }
+    }
 
     await setStatus(jobId, "completed", "Done", {
       restaurantId: newRestaurant.id,

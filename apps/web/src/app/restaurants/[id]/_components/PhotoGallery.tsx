@@ -12,6 +12,7 @@ export interface PhotoItem {
   width: number | null;
   height: number | null;
   byteSize: number;
+  source: "user" | "google_places";
   createdAt: Date;
   uploadedByUserId: string | null;
   uploadedBy: { id: string; firstName: string | null; lastName: string | null } | null;

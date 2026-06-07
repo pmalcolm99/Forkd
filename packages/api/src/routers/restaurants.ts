@@ -2,10 +2,16 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, avg, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import z from "zod";
 import { restaurantPhotos, restaurantReviews, restaurants } from "@forkd/db";
-import { createRestaurantInput, listRestaurantsInput, updateRestaurantInput } from "@forkd/shared";
+import {
+  createRestaurantInput,
+  listRestaurantsInput,
+  updateRestaurantInput,
+  logger,
+} from "@forkd/shared";
 import { protectedProcedure, router } from "../trpc";
 import { suggestRestaurantMetadata } from "../ai/anthropic";
 import { searchPlaces, getPlaceRating } from "../external/google-places";
+import { fetchAndStoreGooglePhoto } from "../external/google-photo";
 import { getDecryptedConfigValue } from "../config/read";
 
 export const restaurantsRouter = router({
@@ -150,7 +156,25 @@ export const restaurantsRouter = router({
         googleRatingFetchedAt: googleRating != null ? new Date() : undefined,
       })
       .returning();
-    return row!;
+    if (!row) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+    // Best-effort: if a place_id is known, fetch the first Google Places photo.
+    if (row.googlePlaceId) {
+      const apiKey = await getDecryptedConfigValue("google_places.api_key", ctx.db);
+      if (apiKey) {
+        const details = await getPlaceRating(row.googlePlaceId, ctx.db);
+        if (details.status === "success" && details.photoName) {
+          await fetchAndStoreGooglePhoto(details.photoName, apiKey, row.id, ctx.db).catch((err) =>
+            logger.warn(
+              { err, restaurantId: row.id },
+              "Google Places photo fetch failed — skipping"
+            )
+          );
+        }
+      }
+    }
+
+    return row;
   }),
 
   update: protectedProcedure.input(updateRestaurantInput).mutation(async ({ input, ctx }) => {
@@ -254,6 +278,31 @@ export const restaurantsRouter = router({
             updatedAt: new Date(),
           })
           .where(eq(restaurants.id, input.restaurantId));
+
+        // Fetch first Google photo if none stored yet.
+        if (top.photoName) {
+          const apiKey = await getDecryptedConfigValue("google_places.api_key", ctx.db);
+          if (apiKey) {
+            const [photoCount] = await ctx.db
+              .select({ c: count() })
+              .from(restaurantPhotos)
+              .where(eq(restaurantPhotos.restaurantId, input.restaurantId));
+            if ((photoCount?.c ?? 0) === 0) {
+              await fetchAndStoreGooglePhoto(
+                top.photoName,
+                apiKey,
+                input.restaurantId,
+                ctx.db
+              ).catch((err) =>
+                logger.warn(
+                  { err, restaurantId: input.restaurantId },
+                  "Google Places photo fetch failed — skipping"
+                )
+              );
+            }
+          }
+        }
+
         return { ok: true };
       }
 
@@ -279,6 +328,31 @@ export const restaurantsRouter = router({
           updatedAt: new Date(),
         })
         .where(eq(restaurants.id, input.restaurantId));
+
+      // Fetch first Google photo if none stored yet.
+      if (result.photoName) {
+        const apiKey = await getDecryptedConfigValue("google_places.api_key", ctx.db);
+        if (apiKey) {
+          const [photoCount] = await ctx.db
+            .select({ c: count() })
+            .from(restaurantPhotos)
+            .where(eq(restaurantPhotos.restaurantId, input.restaurantId));
+          if ((photoCount?.c ?? 0) === 0) {
+            await fetchAndStoreGooglePhoto(
+              result.photoName,
+              apiKey,
+              input.restaurantId,
+              ctx.db
+            ).catch((err) =>
+              logger.warn(
+                { err, restaurantId: input.restaurantId },
+                "Google Places photo fetch failed — skipping"
+              )
+            );
+          }
+        }
+      }
+
       return { ok: true };
     }),
 

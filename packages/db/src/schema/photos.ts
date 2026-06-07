@@ -1,6 +1,8 @@
-import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { restaurants } from "./restaurants";
+
+export const photoSourceEnum = pgEnum("photo_source", ["user", "google_places"]);
 
 export const restaurantPhotos = pgTable("restaurant_photos", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -15,5 +17,6 @@ export const restaurantPhotos = pgTable("restaurant_photos", {
   width: integer("width"),
   height: integer("height"),
   byteSize: integer("byte_size").notNull(),
+  source: photoSourceEnum("source").notNull().default("user"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

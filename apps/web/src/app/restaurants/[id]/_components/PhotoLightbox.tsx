@@ -32,6 +32,7 @@ export function PhotoLightbox({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const photo = photos[currentIndex]!;
+  // Google photos have uploadedByUserId=null; only admins/owners can delete them.
   const canDelete = photo.uploadedByUserId === currentUserId || isAdmin || isOwner;
 
   const { mutate: deletePhoto, isPending: deleting } = trpc.photos.delete.useMutation({
@@ -56,6 +57,7 @@ export function PhotoLightbox({
     setConfirmingDelete(false);
   }, [currentIndex]);
 
+  const isGooglePhoto = photo.source === "google_places";
   const uploaderName = photo.uploadedBy
     ? [photo.uploadedBy.firstName, photo.uploadedBy.lastName].filter(Boolean).join(" ") || "Unknown"
     : "Unknown";
@@ -91,7 +93,13 @@ export function PhotoLightbox({
             </Button>
 
             <span className="text-sm text-gray-500">
-              Uploaded by {uploaderName} · {formatRelativeTime(photo.createdAt)}
+              {isGooglePhoto ? (
+                <>Photo: Google · {formatRelativeTime(photo.createdAt)}</>
+              ) : (
+                <>
+                  Uploaded by {uploaderName} · {formatRelativeTime(photo.createdAt)}
+                </>
+              )}
             </span>
 
             <Button
