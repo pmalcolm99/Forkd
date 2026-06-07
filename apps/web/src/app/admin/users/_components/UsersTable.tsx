@@ -117,72 +117,134 @@ export function UsersTable({ users, currentUserId, isOwner }: UsersTableProps) {
 
   return (
     <>
-      <Table aria-label="Users">
-        <TableHeader>
-          <TableColumn>Name</TableColumn>
-          <TableColumn>Email</TableColumn>
-          <TableColumn>Role</TableColumn>
-          <TableColumn>Joined</TableColumn>
-          <TableColumn>{isOwner ? "Actions" : ""}</TableColumn>
-        </TableHeader>
-        <TableBody>
-          {users.map((u) => (
-            <TableRow key={u.id}>
-              <TableCell>{u.name}</TableCell>
-              <TableCell>{u.email}</TableCell>
-              <TableCell>{roleBadge(u)}</TableCell>
-              <TableCell>
-                <span title={u.createdAt.toLocaleDateString()}>
-                  {formatRelativeTime(u.createdAt)}
-                </span>
-              </TableCell>
-              <TableCell>
-                {isOwner && !u.isOwner && u.id !== currentUserId ? (
-                  <div className="flex gap-2">
-                    {u.isAdmin ? (
+      {/* Mobile: stacked cards */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {users.map((u) => (
+          <div key={u.id} className="rounded-lg border p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-medium">{u.name}</p>
+                <p className="truncate text-sm text-gray-500">{u.email}</p>
+              </div>
+              {roleBadge(u)}
+            </div>
+            <p className="mt-1 text-xs text-gray-400" title={u.createdAt.toLocaleDateString()}>
+              Joined {formatRelativeTime(u.createdAt)}
+            </p>
+            {isOwner && !u.isOwner && u.id !== currentUserId && (
+              <div className="mt-3 flex gap-2">
+                {u.isAdmin ? (
+                  <Button
+                    size="sm"
+                    color="warning"
+                    variant="flat"
+                    onPress={() => {
+                      setConfirmAction({ type: "revoke", user: u });
+                      setActionError(null);
+                    }}
+                  >
+                    Revoke admin
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    color="primary"
+                    variant="flat"
+                    onPress={() => {
+                      setConfirmAction({ type: "promote", user: u });
+                      setActionError(null);
+                    }}
+                  >
+                    Make admin
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  color="danger"
+                  variant="flat"
+                  onPress={() => {
+                    setConfirmAction({ type: "remove", user: u });
+                    setActionError(null);
+                    setRemoveConfirmName("");
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden sm:block">
+        <Table aria-label="Users">
+          <TableHeader>
+            <TableColumn>Name</TableColumn>
+            <TableColumn>Email</TableColumn>
+            <TableColumn>Role</TableColumn>
+            <TableColumn>Joined</TableColumn>
+            <TableColumn>{isOwner ? "Actions" : ""}</TableColumn>
+          </TableHeader>
+          <TableBody>
+            {users.map((u) => (
+              <TableRow key={u.id}>
+                <TableCell>{u.name}</TableCell>
+                <TableCell>{u.email}</TableCell>
+                <TableCell>{roleBadge(u)}</TableCell>
+                <TableCell>
+                  <span title={u.createdAt.toLocaleDateString()}>
+                    {formatRelativeTime(u.createdAt)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {isOwner && !u.isOwner && u.id !== currentUserId ? (
+                    <div className="flex gap-2">
+                      {u.isAdmin ? (
+                        <Button
+                          size="sm"
+                          color="warning"
+                          variant="flat"
+                          onPress={() => {
+                            setConfirmAction({ type: "revoke", user: u });
+                            setActionError(null);
+                          }}
+                        >
+                          Revoke admin
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          color="primary"
+                          variant="flat"
+                          onPress={() => {
+                            setConfirmAction({ type: "promote", user: u });
+                            setActionError(null);
+                          }}
+                        >
+                          Make admin
+                        </Button>
+                      )}
                       <Button
                         size="sm"
-                        color="warning"
+                        color="danger"
                         variant="flat"
                         onPress={() => {
-                          setConfirmAction({ type: "revoke", user: u });
+                          setConfirmAction({ type: "remove", user: u });
                           setActionError(null);
+                          setRemoveConfirmName("");
                         }}
                       >
-                        Revoke admin
+                        Remove
                       </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        color="primary"
-                        variant="flat"
-                        onPress={() => {
-                          setConfirmAction({ type: "promote", user: u });
-                          setActionError(null);
-                        }}
-                      >
-                        Make admin
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      color="danger"
-                      variant="flat"
-                      onPress={() => {
-                        setConfirmAction({ type: "remove", user: u });
-                        setActionError(null);
-                        setRemoveConfirmName("");
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ) : null}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                    </div>
+                  ) : null}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Promote / Revoke confirmation */}
       <Modal

@@ -63,7 +63,12 @@ export function PhotoLightbox({
     : "Unknown";
 
   return (
-    <Modal isOpen size="5xl" onClose={onClose} classNames={{ base: "max-h-screen" }}>
+    <Modal
+      isOpen
+      size="5xl"
+      onClose={onClose}
+      classNames={{ base: "max-h-screen", wrapper: "z-[9999]" }}
+    >
       <ModalContent>
         <ModalHeader className="flex items-center justify-between">
           <span>

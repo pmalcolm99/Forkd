@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Utensils } from "lucide-react";
+import { Map, Plus, Upload, Utensils } from "lucide-react";
 import { ImportModal } from "./ImportModal";
 import {
   Button,
@@ -50,13 +50,45 @@ export function RestaurantList() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Restaurants</h1>
         <div className="flex gap-2">
-          <Button as={Link} href="/map" variant="flat">
+          {/* Mobile: icon-only buttons */}
+          <Button
+            as={Link}
+            href="/map"
+            variant="flat"
+            isIconOnly
+            aria-label="Map view"
+            className="sm:hidden"
+          >
+            <Map className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="flat"
+            isIconOnly
+            aria-label="Import from social"
+            className="sm:hidden"
+            onPress={() => setImportOpen(true)}
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+          <Button
+            as={Link}
+            href="/restaurants/new"
+            color="primary"
+            isIconOnly
+            aria-label="Add restaurant"
+            className="sm:hidden"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+
+          {/* Desktop: text buttons */}
+          <Button as={Link} href="/map" variant="flat" className="hidden sm:flex">
             Map view
           </Button>
-          <Button variant="flat" onPress={() => setImportOpen(true)}>
+          <Button variant="flat" className="hidden sm:flex" onPress={() => setImportOpen(true)}>
             Import from social
           </Button>
-          <Button as={Link} href="/restaurants/new" color="primary">
+          <Button as={Link} href="/restaurants/new" color="primary" className="hidden sm:flex">
             Add restaurant
           </Button>
         </div>

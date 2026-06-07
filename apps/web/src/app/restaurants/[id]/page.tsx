@@ -140,7 +140,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
       </p>
 
       {row.latitude !== null && row.longitude !== null && (
-        <div className="mb-8 overflow-hidden rounded-lg border">
+        <div className="isolate mb-8 overflow-hidden rounded-lg border">
           <DetailMap
             id={row.id}
             name={row.name}

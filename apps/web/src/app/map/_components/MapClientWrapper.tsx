@@ -9,12 +9,15 @@ import { useRestaurantFilters } from "@/lib/useRestaurantFilters";
 import { RestaurantFilterControls } from "@/components/RestaurantFilterControls";
 import type { MapRestaurant } from "@forkd/ui";
 
-const DynamicMap = dynamic<{ restaurants: MapRestaurant[] }>(
+const DynamicMap = dynamic<{ restaurants: MapRestaurant[]; height?: string }>(
   () => import("@forkd/ui").then((m) => m.RestaurantMap),
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[600px] items-center justify-center rounded-lg bg-gray-100">
+      <div
+        className="flex items-center justify-center rounded-lg bg-gray-100"
+        style={{ height: "calc(100dvh - 240px)" }}
+      >
         <Spinner size="lg" />
       </div>
     ),
@@ -79,11 +82,14 @@ export function MapClientWrapper() {
       )}
 
       {isLoading ? (
-        <div className="flex h-[600px] items-center justify-center rounded-lg bg-gray-100">
+        <div
+          className="flex items-center justify-center rounded-lg bg-gray-100"
+          style={{ height: "calc(100dvh - 240px)" }}
+        >
           <Spinner size="lg" />
         </div>
       ) : (
-        <DynamicMap restaurants={mapRestaurants} />
+        <DynamicMap restaurants={mapRestaurants} height="calc(100dvh - 240px)" />
       )}
     </main>
   );
