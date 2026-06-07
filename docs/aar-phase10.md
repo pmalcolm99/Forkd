@@ -2,6 +2,7 @@
 
 **Date completed:** 2026-06-06
 **Post-launch fixes:** 2026-06-06 (same day — first live test exposed three pipeline bugs; all fixed and CI green)
+**Post-launch addendum:** 2026-06-06 (same day — Google Places photo import + mobile UI audit from iPhone screenshots)
 **CI:** ✅ All checks green
 
 ---
@@ -227,6 +228,50 @@ Post-test: draft restaurant deleted (DB cleanup done by user).
 | `docs/master-requirements.md`                                 | `CHROME_WS_ENDPOINT` → `CHROME_CDP_ENDPOINT`; update chrome-headless command docs; add `--remote-allow-origins=*` note        |
 
 ---
+
+---
+
+## Post-launch addendum (Google Places photo + mobile UI)
+
+Two additional work items landed after the initial post-launch fix cycle, driven by Google Places photo integration and an iPhone screenshot audit.
+
+### Google Places cover photo import
+
+When a restaurant is created or imported and a Google Places match is found, the pipeline now fetches the first photo from the Places API and stores it as a `google_places`-sourced photo:
+
+- New `photo_source` enum (`user` | `google_places`) + `source` column on `restaurant_photos` (migration 0003, default `user`).
+- `confirmer.ts` and `google-places.ts` add `places.photos` to their field masks; both return `photoName` (the `places/.../photos/...` resource path used by the new Places API v1).
+- `getPlaceRating` (Place Details) also requests `photos` so the refresh-metadata flow can trigger a fetch when photos are absent.
+- `fetchAndStoreGooglePhoto` helper fetches the image, processes it through Sharp (same pipeline as user uploads: 2000px full + 400px thumb, WebP, EXIF-stripped), writes to the uploads volume, inserts into `restaurant_photos` with `source: "google_places"`.
+- Helper lives in both `packages/queue/src/pipeline/googlePhoto.ts` (import worker) and `packages/api/src/external/google-photo.ts` (tRPC routes). The duplication is intentional — the two callers have different dep chains and keeping them separate avoids adding Sharp to `@forkd/db` or `@forkd/shared`.
+- Photo fetch is always **best-effort**: any failure is `logger.warn` and the restaurant creation / metadata refresh continues unaffected.
+- `refreshGoogleRating` counts existing photos before attempting a fetch — only fetches if the restaurant currently has zero photos.
+- `PhotoLightbox` shows `"Photo: Google · <time>"` attribution for `google_places` photos, satisfying Google Maps Platform ToS.
+- `sharp` added to `@forkd/api` and `@forkd/queue` deps; test suite updated for `photoName: null` in existing `getPlaceRating` assertions.
+
+### Mobile UI fixes (iPhone screenshot audit)
+
+Three bugs identified from iPhone 13/14/15 screenshots at 390 px viewport width:
+
+**Bug 1 (CRITICAL) — Leaflet map renders over photo lightbox**
+
+Leaflet's panes use z-index up to 700 and controls reach 1000. HeroUI Modal's default z-index (z-50 = 50) was below that, so the map painted through the lightbox on mobile. Two-pronged fix:
+
+1. Added `isolate` Tailwind class to the `<div>` wrapping `DetailMap` — `isolation: isolate` creates a new CSS stacking context, trapping all Leaflet z-indexes inside the map container so they can't escape to the page's top-level stacking context.
+2. Added `classNames={{ wrapper: "z-[9999]" }}` to the `PhotoLightbox` `<Modal>` as belt-and-suspenders.
+
+**Bug 2 (MAJOR) — Horizontal overflow on /restaurants at 390 px**
+
+"Restaurants" title + "Map view" + "Import from social" + "Add restaurant" on one flex row exceeded 390 px. Fix: icon-only buttons on mobile (Lucide `Map`, `Upload`, `Plus` with `aria-label`s), full text buttons on `sm:` and up. Added `overflow-x: hidden` on body via `globals.css` and `viewport-fit=cover` via the Next.js `viewport` export in `layout.tsx`.
+
+**Bug 3 (MAJOR) — Horizontal overflow on /admin at 390 px**
+
+- Tab bar (Users / AI / Transcription / Google Places / Backup / About) overflowed the page. Fix: wrapped `<Tabs>` in a `div` with `overflow-x-auto` and `min-w-max` on the tab list so tabs scroll internally without causing page-wide scroll.
+- Users table (Name / Email / Role / Joined / Actions) was too wide for mobile. Fix: stacked card layout at `< sm` breakpoint (name bold, email below, role badge, joined date, action buttons) — table hidden on mobile, visible on `sm:` and up.
+
+**General polish**
+
+- Map page uses `calc(100dvh - 240px)` instead of the fixed `600px` so the map bottom isn't obscured by iOS Safari's dynamic toolbar (`dvh` adapts to the collapsing toolbar; `vh` does not).
 
 ## Test counts
 
