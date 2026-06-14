@@ -46,6 +46,7 @@ export function Header({ userName, isAdmin, isDev }: Props) {
   ];
 
   const dropdownItems: MenuItem[] = [
+    { key: "profile", label: "Profile", href: "/profile" },
     ...(isAdmin ? [{ key: "admin", label: "Admin", href: "/admin" }] : []),
     ...(isDev ? [{ key: "dev", label: "Switch user", href: "/dev/select-user" }] : []),
     { key: "signout", label: "Sign out", href: "/api/auth/sign-out", danger: true },
@@ -120,7 +121,7 @@ export function Header({ userName, isAdmin, isDev }: Props) {
         </Dropdown>
       </NavbarContent>
 
-      <NavbarMenu>
+      <NavbarMenu className="pt-[env(safe-area-inset-top)]">
         {navLinks.map(({ href, label, isActive }) => (
           <NavbarMenuItem key={href}>
             <Link

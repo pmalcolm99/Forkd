@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Button, Spinner } from "@heroui/react";
@@ -27,6 +27,7 @@ const DynamicMap = dynamic<{ restaurants: MapRestaurant[]; height?: string }>(
 export function MapClientWrapper() {
   const { filters, updateFilter, resetFilters } = useRestaurantFilters();
   const [searchValue, setSearchValue] = useState(filters.search ?? "");
+  const hasSetHomeState = useRef(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -41,6 +42,16 @@ export function MapClientWrapper() {
   });
   const { data: cuisines } = trpc.cuisines.list.useQuery();
   const { data: users } = trpc.users.listForFilter.useQuery();
+  const { data: me } = trpc.auth.me.useQuery();
+
+  useEffect(() => {
+    if (!hasSetHomeState.current && me !== undefined) {
+      hasSetHomeState.current = true;
+      if (me.homeState && !filters.state) {
+        updateFilter("state", me.homeState);
+      }
+    }
+  }, [me]); // intentionally omits filters/updateFilter — stable, one-shot on mount
 
   const allItems = data?.items ?? [];
   const withCoords = allItems.filter(

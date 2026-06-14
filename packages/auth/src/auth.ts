@@ -43,6 +43,12 @@ export const auth = betterAuth({
         defaultValue: false,
         input: false,
       },
+      homeState: {
+        type: "string" as const,
+        required: false,
+        fieldName: "homeState",
+        input: false,
+      },
     },
   },
   secret: process.env.MASTER_KEY,

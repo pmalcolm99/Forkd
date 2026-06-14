@@ -55,7 +55,16 @@ const TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 const PLACE_DETAILS_BASE = "https://places.googleapis.com/v1/places";
 const TIMEOUT_MS = 10_000;
 
-export async function searchPlaces(query: string, db: typeof dbType): Promise<SearchPlacesResult> {
+type LocationBias = {
+  low: { latitude: number; longitude: number };
+  high: { latitude: number; longitude: number };
+};
+
+export async function searchPlaces(
+  query: string,
+  db: typeof dbType,
+  locationBias?: LocationBias
+): Promise<SearchPlacesResult> {
   const apiKey = await getDecryptedConfigValue("google_places.api_key", db);
   if (!apiKey) return { status: "not_configured" };
 
@@ -71,7 +80,13 @@ export async function searchPlaces(query: string, db: typeof dbType): Promise<Se
         "X-Goog-FieldMask":
           "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.websiteUri,places.photos",
       },
-      body: JSON.stringify({ textQuery: query, maxResultCount: 5 }),
+      body: JSON.stringify({
+        textQuery: query,
+        maxResultCount: 5,
+        ...(locationBias && {
+          locationBias: { rectangle: { low: locationBias.low, high: locationBias.high } },
+        }),
+      }),
       signal: ac.signal,
     });
     clearTimeout(timer);

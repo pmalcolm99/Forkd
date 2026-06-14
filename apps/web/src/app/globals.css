@@ -14,3 +14,11 @@ body {
   padding-right: env(safe-area-inset-right);
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* iOS Safari auto-zooms when a focused input has font-size < 16px.
+   max(16px, 1em) enforces a 16px floor without overriding larger sizes. */
+input,
+textarea,
+select {
+  font-size: max(16px, 1em);
+}

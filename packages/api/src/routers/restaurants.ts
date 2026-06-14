@@ -7,6 +7,7 @@ import {
   listRestaurantsInput,
   updateRestaurantInput,
   logger,
+  STATE_GEO_BOUNDS,
 } from "@forkd/shared";
 import { protectedProcedure, router } from "../trpc";
 import { suggestRestaurantMetadata } from "../ai/anthropic";
@@ -237,7 +238,10 @@ export const restaurantsRouter = router({
 
   searchGooglePlaces: protectedProcedure
     .input(z.object({ query: z.string().min(1).max(200) }))
-    .query(async ({ input, ctx }) => searchPlaces(input.query, ctx.db)),
+    .query(async ({ input, ctx }) => {
+      const bounds = ctx.user.homeState ? STATE_GEO_BOUNDS[ctx.user.homeState] : undefined;
+      return searchPlaces(input.query, ctx.db, bounds);
+    }),
 
   refreshGoogleRating: protectedProcedure
     .input(z.object({ restaurantId: z.string().uuid() }))

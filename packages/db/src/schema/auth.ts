@@ -13,6 +13,7 @@ export const user = pgTable(
     image: text("image"),
     isAdmin: boolean("is_admin").notNull().default(false),
     isOwner: boolean("is_owner").notNull().default(false),
+    homeState: text("home_state"),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
   },

@@ -5,25 +5,31 @@ import { count, eq } from "drizzle-orm";
 import z from "zod";
 import { makeSignature } from "@forkd/auth";
 import { user, session } from "@forkd/db";
-import { logger } from "@forkd/shared";
+import { logger, usStateEnum } from "@forkd/shared";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 const updateProfileSchema = z.object({
   firstName: z.string().min(1, "First name required").max(100).trim(),
   lastName: z.string().min(1, "Last name required").max(100).trim(),
+  homeState: usStateEnum.nullable().optional(),
 });
 
 export const authRouter = router({
   me: protectedProcedure.query(({ ctx }) => {
-    const { id, email, firstName, lastName, isAdmin, isOwner } = ctx.user;
-    return { id, email, firstName, lastName, isAdmin, isOwner };
+    const { id, email, firstName, lastName, isAdmin, isOwner, homeState } = ctx.user;
+    return { id, email, firstName, lastName, isAdmin, isOwner, homeState };
   }),
 
   updateProfile: protectedProcedure.input(updateProfileSchema).mutation(async ({ input, ctx }) => {
     const name = `${input.firstName} ${input.lastName}`;
     await ctx.db
       .update(user)
-      .set({ firstName: input.firstName, lastName: input.lastName, name })
+      .set({
+        firstName: input.firstName,
+        lastName: input.lastName,
+        name,
+        homeState: input.homeState ?? null,
+      })
       .where(eq(user.id, ctx.user.id));
     return { success: true };
   }),

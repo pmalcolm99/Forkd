@@ -8,3 +8,5 @@ export * from "./usStates";
 export * from "./formatRelativeTime";
 export { formatFamilyAverage } from "./familyAverage";
 export { parseRestaurantFilters } from "./parseRestaurantFilters";
+export { STATE_GEO_BOUNDS } from "./stateGeoBounds";
+export type { StateBounds } from "./stateGeoBounds";
