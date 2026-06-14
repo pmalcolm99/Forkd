@@ -113,7 +113,8 @@ describe("getPlaceRating", () => {
       rating: 4.3,
       latitude: null,
       longitude: null,
-      photoName: null,
+      photoNames: [],
+      ratingsTotal: null,
     });
   });
 
@@ -127,7 +128,8 @@ describe("getPlaceRating", () => {
       rating: null,
       latitude: null,
       longitude: null,
-      photoName: null,
+      photoNames: [],
+      ratingsTotal: null,
     });
   });
 
@@ -147,7 +149,8 @@ describe("getPlaceRating", () => {
       rating: 4.3,
       latitude: 39.74,
       longitude: -105.09,
-      photoName: null,
+      photoNames: [],
+      ratingsTotal: null,
     });
   });
 
