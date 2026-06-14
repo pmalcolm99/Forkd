@@ -10,8 +10,9 @@ export type SearchResult = {
   latitude: number;
   longitude: number;
   rating: number | null;
+  ratingsTotal: number | null;
   website: string | null;
-  photoName: string | null;
+  photoNames: string[];
 };
 
 export type SearchPlacesResult =
@@ -23,9 +24,10 @@ export type GetPlaceRatingResult =
   | {
       status: "success";
       rating: number | null;
+      ratingsTotal: number | null;
       latitude: number | null;
       longitude: number | null;
-      photoName: string | null;
+      photoNames: string[];
     }
   | { status: "not_configured" }
   | { status: "failed"; error: string };
@@ -36,6 +38,7 @@ const placeSchema = z.object({
   formattedAddress: z.string(),
   location: z.object({ latitude: z.number(), longitude: z.number() }),
   rating: z.number().optional(),
+  userRatingCount: z.number().int().optional(),
   websiteUri: z.string().optional(),
   photos: z.array(z.object({ name: z.string() })).optional(),
 });
@@ -47,6 +50,7 @@ const searchResponseSchema = z.object({
 const ratingResponseSchema = z.object({
   id: z.string(),
   rating: z.number().optional(),
+  userRatingCount: z.number().int().optional(),
   location: z.object({ latitude: z.number(), longitude: z.number() }).optional(),
   photos: z.array(z.object({ name: z.string() })).optional(),
 });
@@ -78,7 +82,7 @@ export async function searchPlaces(
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask":
-          "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.websiteUri,places.photos",
+          "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.websiteUri,places.photos",
       },
       body: JSON.stringify({
         textQuery: query,
@@ -116,8 +120,9 @@ export async function searchPlaces(
       latitude: p.location.latitude,
       longitude: p.location.longitude,
       rating: p.rating ?? null,
+      ratingsTotal: p.userRatingCount ?? null,
       website: p.websiteUri ?? null,
-      photoName: p.photos?.[0]?.name ?? null,
+      photoNames: (p.photos ?? []).slice(0, 5).map((ph) => ph.name),
     }));
 
     return { status: "success", results };
@@ -147,7 +152,7 @@ export async function getPlaceRating(
       headers: {
         "X-Goog-Api-Key": apiKey,
         // Place Details field mask has NO "places." prefix (unlike text search)
-        "X-Goog-FieldMask": "id,rating,location,photos",
+        "X-Goog-FieldMask": "id,rating,userRatingCount,location,photos",
       },
       signal: ac.signal,
     });
@@ -174,9 +179,10 @@ export async function getPlaceRating(
     return {
       status: "success",
       rating: parsed.data.rating ?? null,
+      ratingsTotal: parsed.data.userRatingCount ?? null,
       latitude: parsed.data.location?.latitude ?? null,
       longitude: parsed.data.location?.longitude ?? null,
-      photoName: parsed.data.photos?.[0]?.name ?? null,
+      photoNames: (parsed.data.photos ?? []).slice(0, 5).map((ph) => ph.name),
     };
   } catch (err) {
     clearTimeout(timer);

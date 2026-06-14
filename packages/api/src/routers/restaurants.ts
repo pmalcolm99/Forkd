@@ -14,6 +14,29 @@ import { suggestRestaurantMetadata } from "../ai/anthropic";
 import { searchPlaces, getPlaceRating } from "../external/google-places";
 import { fetchAndStoreGooglePhoto } from "../external/google-photo";
 import { getDecryptedConfigValue } from "../config/read";
+import type { db as DbType } from "@forkd/db";
+
+// Fetch up to 5 Google Places photos for a restaurant, skipping if photos already exist.
+async function fetchGooglePhotosIfNeeded(
+  photoNames: string[],
+  apiKey: string,
+  restaurantId: string,
+  db: typeof DbType
+) {
+  if (photoNames.length === 0) return;
+  const [existing] = await db
+    .select({ c: count() })
+    .from(restaurantPhotos)
+    .where(eq(restaurantPhotos.restaurantId, restaurantId));
+  if ((existing?.c ?? 0) > 0) return;
+  await Promise.allSettled(
+    photoNames.map((name) =>
+      fetchAndStoreGooglePhoto(name, apiKey, restaurantId, db).catch((err) =>
+        logger.warn({ err, restaurantId }, "Google Places photo fetch failed — skipping")
+      )
+    )
+  );
+}
 
 export const restaurantsRouter = router({
   list: protectedProcedure.input(listRestaurantsInput).query(async ({ input, ctx }) => {
@@ -76,24 +99,43 @@ export const restaurantsRouter = router({
       statsMap = new Map(stats.map((s) => [s.restaurantId, s]));
     }
 
-    // Fetch the most-recent cover photo per restaurant for this page.
-    let coverMap = new Map<string, { id: string; thumbPath: string }>();
+    // Fetch cover photos: use explicit coverPhotoId when set, else most-recent.
+    const coverMap = new Map<string, { id: string; thumbPath: string }>();
     if (items.length > 0) {
-      const covers = await ctx.db
-        .selectDistinctOn([restaurantPhotos.restaurantId], {
-          restaurantId: restaurantPhotos.restaurantId,
-          id: restaurantPhotos.id,
-          thumbPath: restaurantPhotos.thumbPath,
-        })
-        .from(restaurantPhotos)
-        .where(
-          inArray(
-            restaurantPhotos.restaurantId,
-            items.map((i) => i.id)
-          )
-        )
-        .orderBy(asc(restaurantPhotos.restaurantId), desc(restaurantPhotos.createdAt));
-      coverMap = new Map(covers.map((c) => [c.restaurantId, { id: c.id, thumbPath: c.thumbPath }]));
+      // 1. Restaurants with an explicit cover photo set.
+      const withExplicit = items.filter((i) => i.coverPhotoId != null);
+      if (withExplicit.length > 0) {
+        const explicit = await ctx.db
+          .select({
+            id: restaurantPhotos.id,
+            restaurantId: restaurantPhotos.restaurantId,
+            thumbPath: restaurantPhotos.thumbPath,
+          })
+          .from(restaurantPhotos)
+          .where(
+            inArray(
+              restaurantPhotos.id,
+              withExplicit.map((i) => i.coverPhotoId as string)
+            )
+          );
+        for (const p of explicit)
+          coverMap.set(p.restaurantId, { id: p.id, thumbPath: p.thumbPath });
+      }
+
+      // 2. Fallback: most-recent photo for restaurants not yet in the map.
+      const needFallback = items.filter((i) => !coverMap.has(i.id)).map((i) => i.id);
+      if (needFallback.length > 0) {
+        const covers = await ctx.db
+          .selectDistinctOn([restaurantPhotos.restaurantId], {
+            restaurantId: restaurantPhotos.restaurantId,
+            id: restaurantPhotos.id,
+            thumbPath: restaurantPhotos.thumbPath,
+          })
+          .from(restaurantPhotos)
+          .where(inArray(restaurantPhotos.restaurantId, needFallback))
+          .orderBy(asc(restaurantPhotos.restaurantId), desc(restaurantPhotos.createdAt));
+        for (const c of covers) coverMap.set(c.restaurantId, { id: c.id, thumbPath: c.thumbPath });
+      }
     }
 
     const enrichedItems = items.map((item) => {
@@ -159,18 +201,17 @@ export const restaurantsRouter = router({
       .returning();
     if (!row) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
-    // Best-effort: if a place_id is known, fetch the first Google Places photo.
+    // Best-effort: store ratingsTotal and fetch up to 5 Google Places photos.
     if (row.googlePlaceId) {
       const apiKey = await getDecryptedConfigValue("google_places.api_key", ctx.db);
       if (apiKey) {
         const details = await getPlaceRating(row.googlePlaceId, ctx.db);
-        if (details.status === "success" && details.photoName) {
-          await fetchAndStoreGooglePhoto(details.photoName, apiKey, row.id, ctx.db).catch((err) =>
-            logger.warn(
-              { err, restaurantId: row.id },
-              "Google Places photo fetch failed — skipping"
-            )
-          );
+        if (details.status === "success") {
+          await ctx.db
+            .update(restaurants)
+            .set({ googleRatingsTotal: details.ratingsTotal })
+            .where(eq(restaurants.id, row.id));
+          await fetchGooglePhotosIfNeeded(details.photoNames, apiKey, row.id, ctx.db);
         }
       }
     }
@@ -276,6 +317,7 @@ export const restaurantsRouter = router({
           .set({
             googlePlaceId: top.placeId,
             googleRating: top.rating !== null ? String(top.rating) : null,
+            googleRatingsTotal: top.ratingsTotal,
             googleRatingFetchedAt: new Date(),
             latitude: String(top.latitude),
             longitude: String(top.longitude),
@@ -283,27 +325,11 @@ export const restaurantsRouter = router({
           })
           .where(eq(restaurants.id, input.restaurantId));
 
-        // Fetch first Google photo if none stored yet.
-        if (top.photoName) {
+        // Fetch up to 5 Google photos if none stored yet.
+        if (top.photoNames.length > 0) {
           const apiKey = await getDecryptedConfigValue("google_places.api_key", ctx.db);
           if (apiKey) {
-            const [photoCount] = await ctx.db
-              .select({ c: count() })
-              .from(restaurantPhotos)
-              .where(eq(restaurantPhotos.restaurantId, input.restaurantId));
-            if ((photoCount?.c ?? 0) === 0) {
-              await fetchAndStoreGooglePhoto(
-                top.photoName,
-                apiKey,
-                input.restaurantId,
-                ctx.db
-              ).catch((err) =>
-                logger.warn(
-                  { err, restaurantId: input.restaurantId },
-                  "Google Places photo fetch failed — skipping"
-                )
-              );
-            }
+            await fetchGooglePhotosIfNeeded(top.photoNames, apiKey, input.restaurantId, ctx.db);
           }
         }
 
@@ -325,6 +351,7 @@ export const restaurantsRouter = router({
         .update(restaurants)
         .set({
           googleRating: result.rating !== null ? String(result.rating) : null,
+          googleRatingsTotal: result.ratingsTotal,
           googleRatingFetchedAt: new Date(),
           ...(result.latitude !== null && result.longitude !== null
             ? { latitude: String(result.latitude), longitude: String(result.longitude) }
@@ -333,30 +360,39 @@ export const restaurantsRouter = router({
         })
         .where(eq(restaurants.id, input.restaurantId));
 
-      // Fetch first Google photo if none stored yet.
-      if (result.photoName) {
+      // Fetch up to 5 Google photos if none stored yet.
+      if (result.photoNames.length > 0) {
         const apiKey = await getDecryptedConfigValue("google_places.api_key", ctx.db);
         if (apiKey) {
-          const [photoCount] = await ctx.db
-            .select({ c: count() })
-            .from(restaurantPhotos)
-            .where(eq(restaurantPhotos.restaurantId, input.restaurantId));
-          if ((photoCount?.c ?? 0) === 0) {
-            await fetchAndStoreGooglePhoto(
-              result.photoName,
-              apiKey,
-              input.restaurantId,
-              ctx.db
-            ).catch((err) =>
-              logger.warn(
-                { err, restaurantId: input.restaurantId },
-                "Google Places photo fetch failed — skipping"
-              )
-            );
-          }
+          await fetchGooglePhotosIfNeeded(result.photoNames, apiKey, input.restaurantId, ctx.db);
         }
       }
 
+      return { ok: true };
+    }),
+
+  setCoverPhoto: protectedProcedure
+    .input(z.object({ restaurantId: z.string().uuid(), photoId: z.string().uuid().nullable() }))
+    .mutation(async ({ input, ctx }) => {
+      const row = await ctx.db.query.restaurants.findFirst({
+        where: and(eq(restaurants.id, input.restaurantId), isNull(restaurants.deletedAt)),
+      });
+      if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+
+      if (input.photoId) {
+        const photo = await ctx.db.query.restaurantPhotos.findFirst({
+          where: and(
+            eq(restaurantPhotos.id, input.photoId),
+            eq(restaurantPhotos.restaurantId, input.restaurantId)
+          ),
+        });
+        if (!photo) throw new TRPCError({ code: "NOT_FOUND", message: "Photo not found" });
+      }
+
+      await ctx.db
+        .update(restaurants)
+        .set({ coverPhotoId: input.photoId, updatedAt: new Date() })
+        .where(eq(restaurants.id, input.restaurantId));
       return { ok: true };
     }),
 

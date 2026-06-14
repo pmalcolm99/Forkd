@@ -40,6 +40,13 @@ export const photosRouter = router({
     }
 
     await ctx.db.delete(restaurantPhotos).where(eq(restaurantPhotos.id, input.id));
+
+    // Clear cover photo reference if this photo was the restaurant's cover.
+    await ctx.db
+      .update(restaurants)
+      .set({ coverPhotoId: null })
+      .where(eq(restaurants.coverPhotoId, input.id));
+
     return { success: true };
   }),
 });

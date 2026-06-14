@@ -15,6 +15,7 @@ interface Props {
   currentUserId: string;
   isAdmin: boolean;
   isOwner: boolean;
+  coverPhotoId: string | null;
   onClose: () => void;
 }
 
@@ -25,6 +26,7 @@ export function PhotoLightbox({
   currentUserId,
   isAdmin,
   isOwner,
+  coverPhotoId,
   onClose,
 }: Props) {
   const router = useRouter();
@@ -34,6 +36,7 @@ export function PhotoLightbox({
   const photo = photos[currentIndex]!;
   // Google photos have uploadedByUserId=null; only admins/owners can delete them.
   const canDelete = photo.uploadedByUserId === currentUserId || isAdmin || isOwner;
+  const isCover = photo.id === coverPhotoId;
 
   const { mutate: deletePhoto, isPending: deleting } = trpc.photos.delete.useMutation({
     onSuccess() {
@@ -41,6 +44,13 @@ export function PhotoLightbox({
       onClose();
     },
   });
+
+  const { mutate: setCoverPhoto, isPending: settingCover } =
+    trpc.restaurants.setCoverPhoto.useMutation({
+      onSuccess() {
+        router.refresh();
+      },
+    });
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -116,6 +126,22 @@ export function PhotoLightbox({
             >
               ›
             </Button>
+          </div>
+
+          {/* Cover photo row */}
+          <div className="flex w-full justify-start">
+            {isCover ? (
+              <span className="text-sm text-yellow-500">★ Cover photo</span>
+            ) : (
+              <Button
+                size="sm"
+                variant="flat"
+                isLoading={settingCover}
+                onPress={() => setCoverPhoto({ restaurantId, photoId: photo.id })}
+              >
+                Set as cover
+              </Button>
+            )}
           </div>
 
           {/* Delete row */}

@@ -24,9 +24,17 @@ interface Props {
   currentUserId: string;
   isAdmin: boolean;
   isOwner: boolean;
+  coverPhotoId: string | null;
 }
 
-export function PhotoGallery({ restaurantId, photos, currentUserId, isAdmin, isOwner }: Props) {
+export function PhotoGallery({
+  restaurantId,
+  photos,
+  currentUserId,
+  isAdmin,
+  isOwner,
+  coverPhotoId,
+}: Props) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   return (
@@ -35,7 +43,7 @@ export function PhotoGallery({ restaurantId, photos, currentUserId, isAdmin, isO
         {photos.map((photo, i) => (
           <button
             key={photo.id}
-            className="aspect-square overflow-hidden rounded"
+            className="relative aspect-square overflow-hidden rounded"
             onClick={() => setLightboxIndex(i)}
             type="button"
           >
@@ -44,6 +52,11 @@ export function PhotoGallery({ restaurantId, photos, currentUserId, isAdmin, isO
               alt=""
               className="h-full w-full object-cover"
             />
+            {photo.id === coverPhotoId && (
+              <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-xs text-yellow-400">
+                ★ Cover
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -56,6 +69,7 @@ export function PhotoGallery({ restaurantId, photos, currentUserId, isAdmin, isO
           currentUserId={currentUserId}
           isAdmin={isAdmin}
           isOwner={isOwner}
+          coverPhotoId={coverPhotoId}
           onClose={() => setLightboxIndex(null)}
         />
       )}

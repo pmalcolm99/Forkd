@@ -15,6 +15,8 @@ export interface MapRestaurant {
   status: RestaurantStatus;
   latitude: string;
   longitude: string;
+  googleRating: string | null;
+  googleRatingsTotal: number | null;
 }
 
 interface Props {
@@ -65,12 +67,46 @@ export function RestaurantMap({ restaurants, height = "600px" }: Props) {
           }}
         >
           <Popup>
-            <div>
+            <div style={{ minWidth: "160px" }}>
               <p className="font-semibold">{r.name}</p>
               <p className="text-sm text-gray-600">{RESTAURANT_STATUS_LABELS[r.status]}</p>
-              <a href={`/restaurants/${r.id}`} className="text-sm underline">
-                View details
-              </a>
+              {r.googleRating && (
+                <p className="text-sm text-gray-600">
+                  ★ {parseFloat(r.googleRating).toFixed(1)}
+                  {r.googleRatingsTotal != null
+                    ? ` (${r.googleRatingsTotal.toLocaleString()})`
+                    : ""}
+                </p>
+              )}
+              <div className="mt-2 flex flex-col gap-0.5">
+                <a href={`/restaurants/${r.id}`} className="text-sm underline">
+                  View details
+                </a>
+                <a
+                  href={`https://maps.apple.com/?ll=${r.latitude},${r.longitude}&q=${encodeURIComponent(r.name)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm underline"
+                >
+                  Apple Maps
+                </a>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${r.latitude},${r.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm underline"
+                >
+                  Google Maps
+                </a>
+                <a
+                  href={`https://waze.com/ul?ll=${r.latitude},${r.longitude}&navigate=yes`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm underline"
+                >
+                  Waze
+                </a>
+              </div>
             </div>
           </Popup>
         </CircleMarker>

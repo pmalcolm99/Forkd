@@ -159,6 +159,14 @@ export function RestaurantList() {
                     <Chip size="sm" variant="flat" color="default">
                       {ratingDisplay}
                     </Chip>
+                    {row.googleRating && (
+                      <Chip size="sm" variant="flat" color="default">
+                        ★ {parseFloat(row.googleRating).toFixed(1)}
+                        {row.googleRatingsTotal != null
+                          ? ` (${row.googleRatingsTotal.toLocaleString()})`
+                          : ""}
+                      </Chip>
+                    )}
                   </div>
                 </div>
               </Link>
@@ -177,6 +185,7 @@ export function RestaurantList() {
             <TableColumn>State</TableColumn>
             <TableColumn>Status</TableColumn>
             <TableColumn>Rating</TableColumn>
+            <TableColumn>Google Rating</TableColumn>
             <TableColumn>Added by</TableColumn>
             <TableColumn>Added</TableColumn>
           </TableHeader>
@@ -221,6 +230,18 @@ export function RestaurantList() {
                     <Chip size="sm" variant="flat" color="default">
                       {formatFamilyAverage(row.familyAverage, row.reviewCount).display}
                     </Chip>
+                  </TableCell>
+                  <TableCell>
+                    {row.googleRating ? (
+                      <span className="text-sm">
+                        ★ {parseFloat(row.googleRating).toFixed(1)}
+                        {row.googleRatingsTotal != null
+                          ? ` (${row.googleRatingsTotal.toLocaleString()})`
+                          : ""}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
                   </TableCell>
                   <TableCell>{addedBy}</TableCell>
                   <TableCell>{formatRelativeTime(row.createdAt)}</TableCell>

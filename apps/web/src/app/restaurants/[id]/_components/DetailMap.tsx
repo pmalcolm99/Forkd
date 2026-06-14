@@ -15,8 +15,23 @@ interface Props {
   status: RestaurantStatus;
   latitude: string;
   longitude: string;
+  googleRating: string | null;
+  googleRatingsTotal: number | null;
 }
 
-export function DetailMap({ id, name, status, latitude, longitude }: Props) {
-  return <DynamicMap restaurants={[{ id, name, status, latitude, longitude }]} height="280px" />;
+export function DetailMap({
+  id,
+  name,
+  status,
+  latitude,
+  longitude,
+  googleRating,
+  googleRatingsTotal,
+}: Props) {
+  return (
+    <DynamicMap
+      restaurants={[{ id, name, status, latitude, longitude, googleRating, googleRatingsTotal }]}
+      height="280px"
+    />
+  );
 }

@@ -66,6 +66,8 @@ export function MapClientWrapper() {
     status: r.status,
     latitude: r.latitude,
     longitude: r.longitude,
+    googleRating: r.googleRating ?? null,
+    googleRatingsTotal: r.googleRatingsTotal ?? null,
   }));
 
   return (

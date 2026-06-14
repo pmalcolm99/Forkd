@@ -16,6 +16,7 @@ import { ReviewCard } from "./_components/ReviewCard";
 import { AddReviewButton } from "./_components/AddReviewButton";
 import { PhotoGallery } from "./_components/PhotoGallery";
 import { PhotoUploadButton } from "./_components/PhotoUploadButton";
+import { OpenInMapsButton } from "@/components/OpenInMapsButton";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -79,6 +80,12 @@ export default async function RestaurantDetailPage({ params }: Props) {
         <RefreshGoogleRatingButton
           restaurantId={id}
           googlePlacesConfigured={googlePlacesConfigured}
+        />
+        <OpenInMapsButton
+          name={row.name}
+          address={row.address}
+          latitude={row.latitude}
+          longitude={row.longitude}
         />
       </div>
 
@@ -147,6 +154,8 @@ export default async function RestaurantDetailPage({ params }: Props) {
             status={row.status}
             latitude={row.latitude}
             longitude={row.longitude}
+            googleRating={row.googleRating}
+            googleRatingsTotal={row.googleRatingsTotal}
           />
         </div>
       )}
@@ -181,6 +190,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
             currentUserId={currentUser?.id ?? ""}
             isAdmin={currentUser?.isAdmin ?? false}
             isOwner={currentUser?.isOwner ?? false}
+            coverPhotoId={row.coverPhotoId ?? null}
           />
         ) : (
           <p className="mt-2 text-sm text-gray-400">No photos yet.</p>
