@@ -75,6 +75,10 @@ TRUSTED_ORIGINS=
 SCHEDULER_CLEANUP_MONTHS=3
 MAX_IMAGE_FILE_SIZE=10485760
 
+# Port the app listens on. Controls both the container's listening port and
+# the host-side binding — one value does both. Default is 3000.
+PORT=3000
+
 VIDEO_PARSING_ENABLED=true
 VIDEO_MAX_LENGTH_SECONDS=120
 YT_DLP_BIN_DIR=/usr/local/bin
