@@ -13,7 +13,9 @@ export function useRestaurantFilters(): {
   const filters = parseRestaurantFilters(new URLSearchParams(searchParams.toString()));
 
   function updateFilter(key: string, value: string | string[] | undefined) {
-    const next = new URLSearchParams(searchParams.toString());
+    // window.location.search always reflects the current URL, unlike the closure-captured
+    // searchParams which can be stale when called from a debounced effect.
+    const next = new URLSearchParams(window.location.search);
     next.delete(key);
     if (value !== undefined) {
       if (Array.isArray(value)) value.forEach((v) => next.append(key, v));
@@ -24,9 +26,7 @@ export function useRestaurantFilters(): {
   }
 
   function resetFilters() {
-    // Clear all four filter keys in a single router.replace to avoid stale-searchParams
-    // race conditions that would occur from calling updateFilter() four times sequentially.
-    const next = new URLSearchParams(searchParams.toString());
+    const next = new URLSearchParams(window.location.search);
     ["status", "state", "cuisineTypeId", "addedByUserId"].forEach((k) => next.delete(k));
     next.set("page", "1");
     router.replace(`?${next.toString()}`);
