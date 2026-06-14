@@ -23,7 +23,9 @@ mkdir forkd && cd forkd
 curl -O https://raw.githubusercontent.com/pmalcolm99/Forkd/main/docker-compose.yml
 ```
 
-The compose file references the pre-built image from GitHub Container Registry. You do **not** need to clone the full repository or build anything yourself.
+The compose file already points to the pre-built image at `ghcr.io/pmalcolm99/forkd:latest`. You do **not** need to clone the full repository or build anything yourself.
+
+> **Re-deploying or upgrading?** Re-run `curl -O ...` to get the latest `docker-compose.yml` before pulling a new image — the compose file occasionally changes alongside the app.
 
 ---
 
@@ -88,26 +90,7 @@ YT_DLP_BIN_DIR=/usr/local/bin
 
 ---
 
-## Step 3 — Update `docker-compose.yml` to use the published image
-
-The default `docker-compose.yml` has `image: forkd:latest`, which refers to a locally built image. To use the pre-built image from GitHub Container Registry, open `docker-compose.yml` and change the `webapp` service's `image` line:
-
-```yaml
-webapp:
-  image: ghcr.io/pmalcolm99/forkd:latest # ← replace "forkd:latest" with this
-```
-
-The published image URL is:
-
-```
-ghcr.io/pmalcolm99/forkd:latest
-```
-
-A new image is pushed automatically by CI on every commit to `main`. `latest` always points to the most recent passing build.
-
----
-
-## Step 4 — Pull the image and start the stack
+## Step 3 — Pull the image and start the stack
 
 ```bash
 docker compose pull
@@ -140,7 +123,7 @@ webapp  | ✓ Ready in 2.3s
 
 ---
 
-## Step 5 — Create the Owner account (bootstrap)
+## Step 4 — Create the Owner account (bootstrap)
 
 Forkd detects that no users exist yet and shows a bootstrap screen on the first visit.
 
@@ -149,17 +132,17 @@ Forkd detects that no users exist yet and shows a bootstrap screen on the first 
 3. Enter your email, a strong password (12+ characters), first name, and last name.
 4. Submit. You are now signed in as the Owner.
 
-After the Owner account is created, password authentication is automatically disabled. All future logins go through Cloudflare Access (see Step 6).
+After the Owner account is created, password authentication is automatically disabled. All future logins go through Cloudflare Access (see Step 5).
 
 > The bootstrap screen disappears permanently after the Owner is created. If you need to re-bootstrap (e.g. you wiped the database), stop the stack, delete the `db_data` Docker volume (`docker volume rm forkd_db_data`), and restart.
 
 ---
 
-## Step 6 — Set up Cloudflare Tunnel + Access (recommended)
+## Step 5 — Set up Cloudflare Tunnel + Access (recommended)
 
 This section makes Forkd reachable on the internet while restricting it to your family's email addresses. Skip it if you only need LAN access.
 
-### 6a — Install cloudflared on the server
+### 5a — Install cloudflared on the server
 
 ```bash
 # Debian/Ubuntu
@@ -170,14 +153,14 @@ sudo apt update && sudo apt install cloudflared
 
 For other platforms see the [cloudflared install docs](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/).
 
-### 6b — Authenticate and create a tunnel
+### 5b — Authenticate and create a tunnel
 
 ```bash
 cloudflared tunnel login          # opens a browser — authorise it for your Cloudflare account
 cloudflared tunnel create forkd   # creates the tunnel; note the tunnel ID printed
 ```
 
-### 6c — Create a tunnel config file
+### 5c — Create a tunnel config file
 
 Create `/etc/cloudflared/config.yml`:
 
@@ -191,20 +174,20 @@ ingress:
   - service: http_status:404
 ```
 
-### 6d — Create a DNS CNAME record
+### 5d — Create a DNS CNAME record
 
 ```bash
 cloudflared tunnel route dns forkd forkd.yourdomain.com
 ```
 
-### 6e — Run cloudflared as a service
+### 5e — Run cloudflared as a service
 
 ```bash
 cloudflared service install
 systemctl enable --now cloudflared
 ```
 
-### 6f — Create a Cloudflare Access Application
+### 5f — Create a Cloudflare Access Application
 
 1. Go to [Cloudflare Zero Trust dashboard](https://one.dash.cloudflare.com/) → **Access** → **Applications** → **Add an application**.
 2. Choose **Self-hosted**.
@@ -212,11 +195,11 @@ systemctl enable --now cloudflared
 4. Under **Policies**, add an **Allow** policy with condition `Emails` → list each family member's email address.
 5. After saving, go to the application's settings and copy the **Application Audience (AUD) tag**.
 
-### 6g — Enable Cloudflare Access in your `.env`
+### 5g — Enable Cloudflare Access in your `.env`
 
 ```env
 CF_ACCESS_ENABLED=true
-CF_ACCESS_AUD=<AUD tag from step 6f>
+CF_ACCESS_AUD=<AUD tag from step 5f>
 CF_ACCESS_TEAM_DOMAIN=<your-team>.cloudflareaccess.com
 AUTH_URL=https://forkd.yourdomain.com
 ```
@@ -231,7 +214,7 @@ From now on, anyone reaching `forkd.yourdomain.com` must pass Cloudflare Access 
 
 ---
 
-## Step 7 — Add optional API keys via the admin panel
+## Step 6 — Add optional API keys via the admin panel
 
 Forkd's AI features (restaurant metadata suggestions, social media import) require API keys that are stored encrypted in the database — never in `.env`. Once you're signed in as the Owner:
 
@@ -263,11 +246,11 @@ Sign up at [platform.openai.com](https://platform.openai.com). Create an API key
 
 ---
 
-## Step 8 — Add family members
+## Step 7 — Add family members
 
 Family members do not self-register. They get access by:
 
-1. Having their email address in the Cloudflare Access allow-list (Step 6f).
+1. Having their email address in the Cloudflare Access allow-list (Step 5f).
 2. Clicking the Forkd URL — Cloudflare Access authenticates them and passes their verified email to Forkd.
 3. Forkd creates their account automatically on first visit (no password, no sign-up form).
 
@@ -303,6 +286,28 @@ docker compose exec db pg_dump -U forkd forkd > forkd_backup_$(date +%Y%m%d).sql
 ---
 
 ## Troubleshooting
+
+### Port conflict — "Bind for 0.0.0.0:3000 failed"
+
+Another service on the host is already using port 3000. Add `PORT=3010` (or any free port) to your `.env` file and restart:
+
+```bash
+docker compose up -d
+```
+
+The Cloudflare Tunnel config at `/etc/cloudflared/config.yml` must also point at the new port:
+
+```yaml
+ingress:
+  - hostname: forkd.yourdomain.com
+    service: http://localhost:3010 # ← match your PORT value
+```
+
+Then reload cloudflared: `systemctl restart cloudflared`
+
+> **If you get this error after updating:** you may have an old `docker-compose.yml` without the PORT variable. Re-run `curl -O https://raw.githubusercontent.com/pmalcolm99/Forkd/main/docker-compose.yml` to get the current version, then restart.
+
+---
 
 ### The app shows a blank page or 500 error on first visit
 

@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: forkd:latest
+    image: ghcr.io/pmalcolm99/forkd:latest
     user: "1000:1000"
     restart: always # required for in-app restart feature; Docker re-spawns after process.exit(0)
     ports:
