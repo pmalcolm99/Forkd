@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Alert, Spinner } from "@heroui/react";
+import Link from "next/link";
+import { Alert, Button, Spinner } from "@heroui/react";
 import type { CreateRestaurantInput } from "@forkd/shared";
 import { restaurantRowToInput } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
@@ -45,7 +46,12 @@ export default function EditRestaurantPage() {
 
   return (
     <main className="mx-auto max-w-xl p-6">
-      <h1 className="mb-6 text-2xl font-bold">Edit restaurant</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Edit restaurant</h1>
+        <Button as={Link} href={`/restaurants/${id}`} variant="flat">
+          Cancel
+        </Button>
+      </div>
       {isDuplicate && (
         <Alert color="warning" className="mb-4">
           This restaurant is already in your list — you can update its details below or just close

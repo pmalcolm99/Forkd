@@ -93,16 +93,20 @@ export function MapClientWrapper() {
         </p>
       )}
 
-      {isLoading ? (
-        <div
-          className="flex items-center justify-center rounded-lg bg-gray-100"
-          style={{ height: "calc(100dvh - 240px)" }}
-        >
-          <Spinner size="lg" />
-        </div>
-      ) : (
-        <DynamicMap restaurants={mapRestaurants} height="calc(100dvh - 240px)" />
-      )}
+      {/* isolate creates a CSS stacking context so Leaflet's internal z-indexes
+          (400–1000+) are contained here and don't overlap the Navbar or Drawer */}
+      <div className="isolate">
+        {isLoading ? (
+          <div
+            className="flex items-center justify-center rounded-lg bg-gray-100"
+            style={{ height: "calc(100dvh - 240px)" }}
+          >
+            <Spinner size="lg" />
+          </div>
+        ) : (
+          <DynamicMap restaurants={mapRestaurants} height="calc(100dvh - 240px)" />
+        )}
+      </div>
     </main>
   );
 }
