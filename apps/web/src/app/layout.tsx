@@ -7,12 +7,18 @@ import { Header } from "@/components/Header";
 export const metadata: Metadata = {
   title: "Forkd",
   description: "Family restaurant tracker",
+  appleWebApp: {
+    capable: true,
+    title: "Forkd",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#0a0a0a",
 };
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -30,7 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="en" className="light">
+    <html lang="en" className="dark">
       <body>
         <Header userName={userName} isAdmin={isAdmin} isDev={isDev} />
         <Providers>{children}</Providers>

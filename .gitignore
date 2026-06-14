@@ -45,3 +45,6 @@ Thumbs.db
 
 # Private notes — session logs, after action reports, scratch pads
 notes/
+
+# Branding reference — kept local so the public repo stays clean
+docs/branding.md
