@@ -25,7 +25,7 @@ const DynamicMap = dynamic<{ restaurants: MapRestaurant[]; height?: string }>(
 );
 
 export function MapClientWrapper() {
-  const { filters, updateFilter } = useRestaurantFilters();
+  const { filters, updateFilter, resetFilters } = useRestaurantFilters();
   const [searchValue, setSearchValue] = useState(filters.search ?? "");
 
   useEffect(() => {
@@ -69,6 +69,7 @@ export function MapClientWrapper() {
       <RestaurantFilterControls
         filters={filters}
         updateFilter={updateFilter}
+        resetFilters={resetFilters}
         cuisines={cuisines ?? []}
         users={users ?? []}
         searchValue={searchValue}

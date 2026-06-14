@@ -28,7 +28,7 @@ import { useRestaurantFilters } from "@/lib/useRestaurantFilters";
 import { RestaurantFilterControls } from "@/components/RestaurantFilterControls";
 
 export function RestaurantList() {
-  const { filters, updateFilter } = useRestaurantFilters();
+  const { filters, updateFilter, resetFilters } = useRestaurantFilters();
   const [searchValue, setSearchValue] = useState(filters.search ?? "");
   const [importOpen, setImportOpen] = useState(false);
 
@@ -98,6 +98,7 @@ export function RestaurantList() {
       <RestaurantFilterControls
         filters={filters}
         updateFilter={updateFilter}
+        resetFilters={resetFilters}
         cuisines={cuisines ?? []}
         users={users ?? []}
         searchValue={searchValue}

@@ -1,6 +1,19 @@
 "use client";
 
-import { Input, Select, SelectItem } from "@heroui/react";
+import { useState } from "react";
+import {
+  Badge,
+  Button,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  Input,
+  Select,
+  SelectItem,
+} from "@heroui/react";
+import { SlidersHorizontal } from "lucide-react";
 import {
   RESTAURANT_STATUS_LABELS,
   US_STATES,
@@ -24,6 +37,7 @@ interface User {
 interface Props {
   filters: ListRestaurantsInput;
   updateFilter: (key: string, value: string | string[] | undefined) => void;
+  resetFilters: () => void;
   cuisines: Cuisine[];
   users: User[];
   searchValue: string;
@@ -33,95 +47,245 @@ interface Props {
 export function RestaurantFilterControls({
   filters,
   updateFilter,
+  resetFilters,
   cuisines,
   users,
   searchValue,
   onSearchValueChange,
 }: Props) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const activeFilterCount = [
+    filters.status !== undefined,
+    filters.state !== undefined,
+    filters.cuisineTypeId !== undefined,
+    filters.addedByUserId !== undefined,
+  ].filter(Boolean).length;
+
+  const sortSelect = (
+    <Select
+      placeholder="Sort"
+      aria-label="Sort"
+      size="sm"
+      className="w-40 shrink-0"
+      selectedKeys={new Set([filters.sort])}
+      onSelectionChange={(keys) => {
+        const val = Array.from(keys)[0] as string | undefined;
+        updateFilter("sort", val || undefined);
+      }}
+    >
+      <SelectItem key="recent">Most recent</SelectItem>
+      <SelectItem key="alphabetical">Alphabetical</SelectItem>
+      <SelectItem key="family_rating">Highest rated</SelectItem>
+    </Select>
+  );
+
   return (
-    <div className="mb-4 flex flex-wrap gap-3">
-      <Input
-        placeholder="Search name or address…"
-        className="w-64"
-        value={searchValue}
-        onValueChange={onSearchValueChange}
-        isClearable
-        onClear={() => onSearchValueChange("")}
-      />
+    <>
+      {/* ── Mobile layout (hidden on sm:) ─────────────────────────────── */}
+      <div className="mb-4 flex flex-col gap-2 sm:hidden">
+        {/* Row 1: search */}
+        <Input
+          placeholder="Search name or address…"
+          value={searchValue}
+          onValueChange={onSearchValueChange}
+          isClearable
+          onClear={() => onSearchValueChange("")}
+        />
 
-      <Select
-        placeholder="Status"
-        className="w-52"
-        selectionMode="multiple"
-        selectedKeys={new Set(filters.status ?? ALL_STATUSES)}
-        onSelectionChange={(keys) => {
-          const vals = Array.from(keys) as string[];
-          const isAll = vals.length === ALL_STATUSES.length;
-          updateFilter("status", isAll ? undefined : vals.length ? vals : undefined);
-        }}
-      >
-        {Object.entries(RESTAURANT_STATUS_LABELS).map(([k, label]) => (
-          <SelectItem key={k}>{label}</SelectItem>
-        ))}
-      </Select>
+        {/* Row 2: Filters button + Sort */}
+        <div className="flex items-center gap-2">
+          <Badge
+            content={activeFilterCount}
+            color="primary"
+            isInvisible={activeFilterCount === 0}
+            size="sm"
+          >
+            <Button
+              variant="flat"
+              size="sm"
+              startContent={<SlidersHorizontal className="h-3.5 w-3.5" />}
+              onPress={() => setDrawerOpen(true)}
+            >
+              Filters
+            </Button>
+          </Badge>
 
-      <Select
-        placeholder="State"
-        className="w-40"
-        selectedKeys={filters.state ? new Set([filters.state]) : new Set()}
-        onSelectionChange={(keys) => {
-          const val = Array.from(keys)[0] as string | undefined;
-          updateFilter("state", val || undefined);
-        }}
-      >
-        {US_STATES.map((s) => (
-          <SelectItem key={s.code}>{s.name}</SelectItem>
-        ))}
-      </Select>
+          {sortSelect}
+        </div>
+      </div>
 
-      <Select
-        placeholder="Cuisine"
-        className="w-48"
-        selectedKeys={filters.cuisineTypeId ? new Set([filters.cuisineTypeId]) : new Set()}
-        onSelectionChange={(keys) => {
-          const val = Array.from(keys)[0] as string | undefined;
-          updateFilter("cuisineTypeId", val || undefined);
-        }}
+      {/* ── Filter drawer (mobile only) ───────────────────────────────── */}
+      <Drawer
+        isOpen={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        placement="bottom"
+        classNames={{ base: "sm:hidden" }}
       >
-        {cuisines.map((c) => (
-          <SelectItem key={c.id}>{c.name}</SelectItem>
-        ))}
-      </Select>
+        <DrawerContent>
+          <DrawerHeader className="text-base font-semibold">Filters</DrawerHeader>
 
-      <Select
-        placeholder="Added by"
-        className="w-48"
-        selectedKeys={filters.addedByUserId ? new Set([filters.addedByUserId]) : new Set()}
-        onSelectionChange={(keys) => {
-          const val = Array.from(keys)[0] as string | undefined;
-          updateFilter("addedByUserId", val || undefined);
-        }}
-      >
-        {users.map((u) => (
-          <SelectItem key={u.id}>
-            {[u.firstName, u.lastName].filter(Boolean).join(" ") || u.id}
-          </SelectItem>
-        ))}
-      </Select>
+          <DrawerBody className="flex flex-col gap-4 pb-2">
+            <Select
+              label="Status"
+              selectionMode="multiple"
+              selectedKeys={new Set(filters.status ?? ALL_STATUSES)}
+              onSelectionChange={(keys) => {
+                const vals = Array.from(keys) as string[];
+                const isAll = vals.length === ALL_STATUSES.length;
+                updateFilter("status", isAll ? undefined : vals.length ? vals : undefined);
+              }}
+            >
+              {Object.entries(RESTAURANT_STATUS_LABELS).map(([k, label]) => (
+                <SelectItem key={k}>{label}</SelectItem>
+              ))}
+            </Select>
 
-      <Select
-        placeholder="Sort"
-        className="w-44"
-        selectedKeys={new Set([filters.sort])}
-        onSelectionChange={(keys) => {
-          const val = Array.from(keys)[0] as string | undefined;
-          updateFilter("sort", val || undefined);
-        }}
-      >
-        <SelectItem key="recent">Most recent</SelectItem>
-        <SelectItem key="alphabetical">Alphabetical</SelectItem>
-        <SelectItem key="family_rating">Highest rated</SelectItem>
-      </Select>
-    </div>
+            <Select
+              label="State"
+              selectedKeys={filters.state ? new Set([filters.state]) : new Set()}
+              onSelectionChange={(keys) => {
+                const val = Array.from(keys)[0] as string | undefined;
+                updateFilter("state", val || undefined);
+              }}
+            >
+              {US_STATES.map((s) => (
+                <SelectItem key={s.code}>{s.name}</SelectItem>
+              ))}
+            </Select>
+
+            <Select
+              label="Cuisine"
+              selectedKeys={filters.cuisineTypeId ? new Set([filters.cuisineTypeId]) : new Set()}
+              onSelectionChange={(keys) => {
+                const val = Array.from(keys)[0] as string | undefined;
+                updateFilter("cuisineTypeId", val || undefined);
+              }}
+            >
+              {cuisines.map((c) => (
+                <SelectItem key={c.id}>{c.name}</SelectItem>
+              ))}
+            </Select>
+
+            <Select
+              label="Added by"
+              selectedKeys={filters.addedByUserId ? new Set([filters.addedByUserId]) : new Set()}
+              onSelectionChange={(keys) => {
+                const val = Array.from(keys)[0] as string | undefined;
+                updateFilter("addedByUserId", val || undefined);
+              }}
+            >
+              {users.map((u) => (
+                <SelectItem key={u.id}>
+                  {[u.firstName, u.lastName].filter(Boolean).join(" ") || u.id}
+                </SelectItem>
+              ))}
+            </Select>
+          </DrawerBody>
+
+          <DrawerFooter className="flex gap-2">
+            <Button
+              variant="flat"
+              className="flex-1"
+              onPress={() => {
+                resetFilters();
+                setDrawerOpen(false);
+              }}
+            >
+              Reset
+            </Button>
+            <Button color="primary" className="flex-1" onPress={() => setDrawerOpen(false)}>
+              Apply
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      {/* ── Desktop layout (hidden below sm:) ────────────────────────── */}
+      <div className="mb-4 hidden flex-wrap gap-3 sm:flex">
+        <Input
+          placeholder="Search name or address…"
+          className="w-64"
+          value={searchValue}
+          onValueChange={onSearchValueChange}
+          isClearable
+          onClear={() => onSearchValueChange("")}
+        />
+
+        <Select
+          placeholder="Status"
+          className="w-52"
+          selectionMode="multiple"
+          selectedKeys={new Set(filters.status ?? ALL_STATUSES)}
+          onSelectionChange={(keys) => {
+            const vals = Array.from(keys) as string[];
+            const isAll = vals.length === ALL_STATUSES.length;
+            updateFilter("status", isAll ? undefined : vals.length ? vals : undefined);
+          }}
+        >
+          {Object.entries(RESTAURANT_STATUS_LABELS).map(([k, label]) => (
+            <SelectItem key={k}>{label}</SelectItem>
+          ))}
+        </Select>
+
+        <Select
+          placeholder="State"
+          className="w-40"
+          selectedKeys={filters.state ? new Set([filters.state]) : new Set()}
+          onSelectionChange={(keys) => {
+            const val = Array.from(keys)[0] as string | undefined;
+            updateFilter("state", val || undefined);
+          }}
+        >
+          {US_STATES.map((s) => (
+            <SelectItem key={s.code}>{s.name}</SelectItem>
+          ))}
+        </Select>
+
+        <Select
+          placeholder="Cuisine"
+          className="w-48"
+          selectedKeys={filters.cuisineTypeId ? new Set([filters.cuisineTypeId]) : new Set()}
+          onSelectionChange={(keys) => {
+            const val = Array.from(keys)[0] as string | undefined;
+            updateFilter("cuisineTypeId", val || undefined);
+          }}
+        >
+          {cuisines.map((c) => (
+            <SelectItem key={c.id}>{c.name}</SelectItem>
+          ))}
+        </Select>
+
+        <Select
+          placeholder="Added by"
+          className="w-48"
+          selectedKeys={filters.addedByUserId ? new Set([filters.addedByUserId]) : new Set()}
+          onSelectionChange={(keys) => {
+            const val = Array.from(keys)[0] as string | undefined;
+            updateFilter("addedByUserId", val || undefined);
+          }}
+        >
+          {users.map((u) => (
+            <SelectItem key={u.id}>
+              {[u.firstName, u.lastName].filter(Boolean).join(" ") || u.id}
+            </SelectItem>
+          ))}
+        </Select>
+
+        <Select
+          placeholder="Sort"
+          className="w-44"
+          selectedKeys={new Set([filters.sort])}
+          onSelectionChange={(keys) => {
+            const val = Array.from(keys)[0] as string | undefined;
+            updateFilter("sort", val || undefined);
+          }}
+        >
+          <SelectItem key="recent">Most recent</SelectItem>
+          <SelectItem key="alphabetical">Alphabetical</SelectItem>
+          <SelectItem key="family_rating">Highest rated</SelectItem>
+        </Select>
+      </div>
+    </>
   );
 }

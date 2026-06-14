@@ -57,7 +57,13 @@ export function Header({ userName, isAdmin, isDev }: Props) {
       isMenuOpen={isMenuOpen}
       onMenuOpenChange={setIsMenuOpen}
       maxWidth="xl"
-      classNames={{ wrapper: "px-4" }}
+      classNames={{
+        // pt-[env(safe-area-inset-top)]: the Navbar background extends behind the iOS status bar
+        // (black-translucent makes it transparent, so our dark header fills that strip),
+        // while this padding pushes the logo/buttons below it so they stay visible and tappable.
+        base: "pt-[env(safe-area-inset-top)]",
+        wrapper: "px-4",
+      }}
     >
       <NavbarContent>
         <NavbarMenuToggle

@@ -6,4 +6,11 @@
 
 body {
   overflow-x: hidden;
+  /* Landscape notch (left/right) and home-bar (bottom) insets applied globally
+     so no individual page needs to account for them. Top inset is handled by
+     the Navbar's pt-[env(safe-area-inset-top)] instead, so the dark background
+     fills behind the status bar rather than leaving a body-color gap. */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
 }
