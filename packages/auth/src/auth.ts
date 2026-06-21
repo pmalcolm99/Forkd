@@ -49,6 +49,12 @@ export const auth = betterAuth({
         fieldName: "homeState",
         input: false,
       },
+      lastActiveAt: {
+        type: "date" as const,
+        required: false,
+        fieldName: "lastActiveAt",
+        input: false,
+      },
     },
   },
   secret: process.env.MASTER_KEY,

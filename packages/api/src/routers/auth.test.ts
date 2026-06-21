@@ -28,6 +28,11 @@ describe("auth.signOut", () => {
 
     const mockDb = {
       delete: mockDelete,
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      }),
     };
 
     const RAW_TOKEN = "raw-tok-abc123";

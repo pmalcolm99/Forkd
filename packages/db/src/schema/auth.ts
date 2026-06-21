@@ -14,6 +14,7 @@ export const user = pgTable(
     isAdmin: boolean("is_admin").notNull().default(false),
     isOwner: boolean("is_owner").notNull().default(false),
     homeState: text("home_state"),
+    lastActiveAt: timestamp("last_active_at"),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
   },

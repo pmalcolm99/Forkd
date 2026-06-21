@@ -17,6 +17,7 @@ import { AddReviewButton } from "./_components/AddReviewButton";
 import { PhotoGallery } from "./_components/PhotoGallery";
 import { PhotoUploadButton } from "./_components/PhotoUploadButton";
 import { OpenInMapsButton } from "@/components/OpenInMapsButton";
+import { photoUrl } from "@/lib/photoUrl";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -58,6 +59,11 @@ export default async function RestaurantDetailPage({ params }: Props) {
   const addedBy = row.addedBy
     ? [row.addedBy.firstName, row.addedBy.lastName].filter(Boolean).join(" ")
     : null;
+
+  const coverPhoto = row.coverPhotoId
+    ? row.photos.find((p) => p.id === row.coverPhotoId)
+    : row.photos[0];
+  const detailCoverPhotoUrl = coverPhoto ? photoUrl(row.id, coverPhoto.id, "thumb") : null;
 
   return (
     <main className="mx-auto max-w-2xl p-6">
@@ -147,7 +153,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
       </p>
 
       {row.latitude !== null && row.longitude !== null && (
-        <div className="isolate mb-8 overflow-hidden rounded-lg border">
+        <div className="relative isolate mb-8 overflow-hidden rounded-lg border">
           <DetailMap
             id={row.id}
             name={row.name}
@@ -156,6 +162,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
             longitude={row.longitude}
             googleRating={row.googleRating}
             googleRatingsTotal={row.googleRatingsTotal}
+            coverPhotoUrl={detailCoverPhotoUrl}
           />
         </div>
       )}

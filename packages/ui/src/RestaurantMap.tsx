@@ -17,11 +17,13 @@ export interface MapRestaurant {
   longitude: string;
   googleRating: string | null;
   googleRatingsTotal: number | null;
+  coverPhotoUrl: string | null;
 }
 
 interface Props {
   restaurants: MapRestaurant[];
   height?: string;
+  userLocation?: { latitude: number; longitude: number } | null;
 }
 
 interface FitBoundsProps {
@@ -46,7 +48,7 @@ function FitBounds({ restaurants }: FitBoundsProps) {
   return null;
 }
 
-export function RestaurantMap({ restaurants, height = "600px" }: Props) {
+export function RestaurantMap({ restaurants, height = "600px", userLocation }: Props) {
   return (
     <MapContainer center={[39.83, -98.58]} zoom={4} style={{ height, width: "100%" }}>
       <TileLayer
@@ -54,6 +56,17 @@ export function RestaurantMap({ restaurants, height = "600px" }: Props) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
       <FitBounds restaurants={restaurants} />
+      {userLocation && (
+        <CircleMarker
+          center={[userLocation.latitude, userLocation.longitude]}
+          radius={8}
+          pathOptions={{ fillColor: "#3b82f6", fillOpacity: 1, color: "white", weight: 2 }}
+        >
+          <Popup>
+            <p className="font-semibold">You are here</p>
+          </Popup>
+        </CircleMarker>
+      )}
       {restaurants.map((r) => (
         <CircleMarker
           key={r.id}
@@ -68,6 +81,19 @@ export function RestaurantMap({ restaurants, height = "600px" }: Props) {
         >
           <Popup>
             <div style={{ minWidth: "160px" }}>
+              {r.coverPhotoUrl && (
+                <img
+                  src={r.coverPhotoUrl}
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: "80px",
+                    objectFit: "cover",
+                    borderRadius: "4px",
+                    marginBottom: "6px",
+                  }}
+                />
+              )}
               <p className="font-semibold">{r.name}</p>
               <p className="text-sm text-gray-600">{RESTAURANT_STATUS_LABELS[r.status]}</p>
               {r.googleRating && (

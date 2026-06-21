@@ -29,6 +29,7 @@ type UserRow = {
   isOwner: boolean;
   isAdmin: boolean;
   createdAt: Date;
+  lastActiveAt: Date | null;
 };
 
 interface UsersTableProps {
@@ -131,6 +132,9 @@ export function UsersTable({ users, currentUserId, isOwner }: UsersTableProps) {
             <p className="mt-1 text-xs text-gray-400" title={u.createdAt.toLocaleDateString()}>
               Joined {formatRelativeTime(u.createdAt)}
             </p>
+            <p className="mt-0.5 text-xs text-gray-400">
+              Last active: {u.lastActiveAt ? formatRelativeTime(u.lastActiveAt) : "Never"}
+            </p>
             {isOwner && !u.isOwner && u.id !== currentUserId && (
               <div className="mt-3 flex gap-2">
                 {u.isAdmin ? (
@@ -184,6 +188,7 @@ export function UsersTable({ users, currentUserId, isOwner }: UsersTableProps) {
             <TableColumn>Email</TableColumn>
             <TableColumn>Role</TableColumn>
             <TableColumn>Joined</TableColumn>
+            <TableColumn>Last Active</TableColumn>
             <TableColumn>{isOwner ? "Actions" : ""}</TableColumn>
           </TableHeader>
           <TableBody>
@@ -196,6 +201,15 @@ export function UsersTable({ users, currentUserId, isOwner }: UsersTableProps) {
                   <span title={u.createdAt.toLocaleDateString()}>
                     {formatRelativeTime(u.createdAt)}
                   </span>
+                </TableCell>
+                <TableCell>
+                  {u.lastActiveAt ? (
+                    <span title={u.lastActiveAt.toLocaleDateString()}>
+                      {formatRelativeTime(u.lastActiveAt)}
+                    </span>
+                  ) : (
+                    "Never"
+                  )}
                 </TableCell>
                 <TableCell>
                   {isOwner && !u.isOwner && u.id !== currentUserId ? (

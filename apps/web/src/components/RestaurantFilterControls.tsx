@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Badge,
   Button,
+  Chip,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -13,7 +14,7 @@ import {
   Select,
   SelectItem,
 } from "@heroui/react";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import {
   RESTAURANT_STATUS_LABELS,
   US_STATES,
@@ -42,6 +43,7 @@ interface Props {
   users: User[];
   searchValue: string;
   onSearchValueChange: (value: string) => void;
+  homeState?: string | null;
 }
 
 export function RestaurantFilterControls({
@@ -52,6 +54,7 @@ export function RestaurantFilterControls({
   users,
   searchValue,
   onSearchValueChange,
+  homeState,
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -61,6 +64,27 @@ export function RestaurantFilterControls({
     filters.cuisineTypeId !== undefined,
     filters.addedByUserId !== undefined,
   ].filter(Boolean).length;
+
+  const hasActiveFilters = activeFilterCount > 0 || searchValue !== "";
+
+  const homeStateActive = homeState != null && filters.state === homeState;
+
+  function handleReset() {
+    resetFilters();
+    onSearchValueChange("");
+  }
+
+  const homeStateChip = homeState ? (
+    <Chip
+      size="sm"
+      variant={homeStateActive ? "solid" : "flat"}
+      color={homeStateActive ? "primary" : "default"}
+      className="cursor-pointer"
+      onClick={() => updateFilter("state", homeStateActive ? undefined : homeState)}
+    >
+      {homeState}
+    </Chip>
+  ) : null;
 
   const sortSelect = (
     <Select
@@ -93,7 +117,7 @@ export function RestaurantFilterControls({
           onClear={() => onSearchValueChange("")}
         />
 
-        {/* Row 2: Filters button + Sort */}
+        {/* Row 2: Filters button + home state chip + reset + Sort */}
         <div className="flex items-center gap-2">
           <Badge
             content={activeFilterCount}
@@ -111,7 +135,21 @@ export function RestaurantFilterControls({
             </Button>
           </Badge>
 
-          {sortSelect}
+          {homeStateChip}
+
+          {hasActiveFilters && (
+            <Button
+              isIconOnly
+              variant="flat"
+              size="sm"
+              aria-label="Reset filters"
+              onPress={handleReset}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+
+          <div className="ml-auto">{sortSelect}</div>
         </div>
       </div>
 
@@ -285,6 +323,14 @@ export function RestaurantFilterControls({
           <SelectItem key="alphabetical">Alphabetical</SelectItem>
           <SelectItem key="family_rating">Highest rated</SelectItem>
         </Select>
+
+        {homeStateChip}
+
+        {hasActiveFilters && (
+          <Button variant="flat" size="sm" onPress={handleReset}>
+            Reset
+          </Button>
+        )}
       </div>
     </>
   );

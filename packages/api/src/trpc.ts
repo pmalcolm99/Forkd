@@ -1,7 +1,8 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
+import { eq } from "drizzle-orm";
 import { auth } from "@forkd/auth";
-import { db } from "@forkd/db";
+import { db, user as userTable } from "@forkd/db";
 
 export const createTRPCContext = async ({
   req,
@@ -31,6 +32,15 @@ export const publicProcedure = t.procedure;
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  // Fire-and-forget: update lastActiveAt at most once per 5 min per user.
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+  if (!ctx.user.lastActiveAt || ctx.user.lastActiveAt < fiveMinAgo) {
+    ctx.db
+      .update(userTable)
+      .set({ lastActiveAt: new Date() })
+      .where(eq(userTable.id, ctx.user.id))
+      .catch(() => {});
   }
   return next({ ctx: { ...ctx, user: ctx.user } });
 });

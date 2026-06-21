@@ -35,6 +35,11 @@ function makeMockDbWithCount(count: number) {
         returning: vi.fn().mockResolvedValue([{ id: TEST_UUID }]),
       }),
     }),
+    update: vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([]),
+      }),
+    }),
   } as unknown as Parameters<typeof makeImportCaller>[0];
 }
 

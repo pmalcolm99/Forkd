@@ -28,20 +28,40 @@ export function AdminTabs({ isOwner }: AdminTabsProps) {
     allTabs.find((t) => pathname === t.href || pathname.startsWith(t.href + "/"))?.key ?? "users";
 
   return (
-    <div className="-mx-6 overflow-x-auto px-6 pb-1 sm:mx-0 sm:px-0 sm:pb-0">
-      <Tabs
-        selectedKey={activeKey}
-        onSelectionChange={(key) => {
-          const tab = allTabs.find((t) => t.key === key);
-          if (tab) router.push(tab.href);
-        }}
-        classNames={{ panel: "hidden", tabList: "min-w-max" }}
-        className="mb-6"
-      >
+    <>
+      {/* Mobile: 3-column pill grid — no horizontal scroll needed */}
+      <div className="mb-6 grid grid-cols-3 gap-2 sm:hidden">
         {allTabs.map((tab) => (
-          <Tab key={tab.key} title={tab.label} />
+          <button
+            key={tab.key}
+            onClick={() => router.push(tab.href)}
+            className={`rounded-lg px-2 py-2 text-center text-sm font-medium transition-colors ${
+              activeKey === tab.key
+                ? "bg-primary text-white"
+                : "bg-default-100 text-default-700 hover:bg-default-200"
+            }`}
+          >
+            {tab.label}
+          </button>
         ))}
-      </Tabs>
-    </div>
+      </div>
+
+      {/* Desktop: standard horizontal tabs */}
+      <div className="hidden sm:block">
+        <Tabs
+          selectedKey={activeKey}
+          onSelectionChange={(key) => {
+            const tab = allTabs.find((t) => t.key === key);
+            if (tab) router.push(tab.href);
+          }}
+          classNames={{ panel: "hidden" }}
+          className="mb-6"
+        >
+          {allTabs.map((tab) => (
+            <Tab key={tab.key} title={tab.label} />
+          ))}
+        </Tabs>
+      </div>
+    </>
   );
 }

@@ -22,6 +22,7 @@ export default function NewRestaurantPage() {
   const [searchEnabled, setSearchEnabled] = useState(false);
   const [prefill, setPrefill] = useState<Partial<CreateRestaurantInput>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fromGooglePlaces, setFromGooglePlaces] = useState(false);
 
   const { data: gpConfig } = trpc.restaurants.googlePlacesConfigured.useQuery();
   const googlePlacesConfigured = gpConfig?.configured ?? false;
@@ -64,6 +65,7 @@ export default function NewRestaurantPage() {
           onSubmit={handleSubmit}
           isSubmitting={isPending}
           submitLabel="Add restaurant"
+          autoSuggest={fromGooglePlaces}
         />
       </main>
     );
@@ -138,6 +140,7 @@ export default function NewRestaurantPage() {
                   latitude: result.latitude,
                   longitude: result.longitude,
                 });
+                setFromGooglePlaces(true);
                 setStep("form");
               }}
             >
@@ -155,6 +158,7 @@ export default function NewRestaurantPage() {
         variant="light"
         onPress={() => {
           setPrefill({});
+          setFromGooglePlaces(false);
           setStep("form");
         }}
       >

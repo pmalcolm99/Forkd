@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Map, Plus, Upload, Utensils } from "lucide-react";
 import { ImportModal } from "./ImportModal";
@@ -31,7 +31,6 @@ export function RestaurantList() {
   const { filters, updateFilter, resetFilters } = useRestaurantFilters();
   const [searchValue, setSearchValue] = useState(filters.search ?? "");
   const [importOpen, setImportOpen] = useState(false);
-  const hasSetHomeState = useRef(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -44,15 +43,6 @@ export function RestaurantList() {
   const { data: cuisines } = trpc.cuisines.list.useQuery();
   const { data: users } = trpc.users.listForFilter.useQuery();
   const { data: me } = trpc.auth.me.useQuery();
-
-  useEffect(() => {
-    if (!hasSetHomeState.current && me !== undefined) {
-      hasSetHomeState.current = true;
-      if (me.homeState && !filters.state) {
-        updateFilter("state", me.homeState);
-      }
-    }
-  }, [me]); // intentionally omits filters/updateFilter — stable, one-shot on mount
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / filters.pageSize)) : 1;
 
@@ -114,6 +104,7 @@ export function RestaurantList() {
         users={users ?? []}
         searchValue={searchValue}
         onSearchValueChange={setSearchValue}
+        homeState={me?.homeState ?? null}
       />
 
       {/* Mobile card list */}
@@ -156,12 +147,12 @@ export function RestaurantList() {
                     <Chip color={statusColor.color} className={statusColor.className} size="sm">
                       {RESTAURANT_STATUS_LABELS[row.status]}
                     </Chip>
-                    <Chip size="sm" variant="flat" color="default">
-                      {ratingDisplay}
+                    <Chip size="sm" variant="flat" color="secondary">
+                      Family: {ratingDisplay}
                     </Chip>
                     {row.googleRating && (
                       <Chip size="sm" variant="flat" color="default">
-                        ★ {parseFloat(row.googleRating).toFixed(1)}
+                        Google: ★ {parseFloat(row.googleRating).toFixed(1)}
                         {row.googleRatingsTotal != null
                           ? ` (${row.googleRatingsTotal.toLocaleString()})`
                           : ""}

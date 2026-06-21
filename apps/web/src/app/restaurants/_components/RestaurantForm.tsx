@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Input, Select, SelectItem, Textarea, Tooltip } from "@heroui/react";
 import type { CreateRestaurantInput } from "@forkd/shared";
 import { RESTAURANT_STATUS_LABELS, US_STATES, createRestaurantInput } from "@forkd/shared";
@@ -12,6 +12,7 @@ interface RestaurantFormProps {
   onSubmit: (data: CreateRestaurantInput) => void;
   isSubmitting: boolean;
   submitLabel?: string;
+  autoSuggest?: boolean;
 }
 
 export function RestaurantForm({
@@ -19,6 +20,7 @@ export function RestaurantForm({
   onSubmit,
   isSubmitting,
   submitLabel = "Save restaurant",
+  autoSuggest = false,
 }: RestaurantFormProps) {
   const { values, setField, errors, handleSubmit } = useZodForm(
     createRestaurantInput,
@@ -45,6 +47,12 @@ export function RestaurantForm({
       setSuggestError("AI suggestion failed. You can fill in the fields manually.");
     },
   });
+
+  useEffect(() => {
+    if (autoSuggest && aiConfig?.configured && values.name) {
+      suggest.mutate({ name: values.name, address: values.address, website: values.website });
+    }
+  }, []); // intentional empty deps — fires once on mount when autoSuggest is true
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">

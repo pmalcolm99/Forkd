@@ -43,6 +43,13 @@
       "when": 1781470113957,
       "tag": "0005_naive_union_jack",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782080558553,
+      "tag": "0006_clumsy_vapor",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,7 @@ export const usersRouter = router({
         isOwner: user.isOwner,
         isAdmin: user.isAdmin,
         createdAt: user.createdAt,
+        lastActiveAt: user.lastActiveAt,
       })
       .from(user)
       // isOwner first, then admins, then users — all alphabetical within each group.

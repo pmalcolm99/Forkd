@@ -3,31 +3,36 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { LocateFixed } from "lucide-react";
 import { Button, Spinner } from "@heroui/react";
 import { trpc } from "@/lib/trpc/client";
 import { useRestaurantFilters } from "@/lib/useRestaurantFilters";
+import { useUserLocation } from "@/lib/useUserLocation";
 import { RestaurantFilterControls } from "@/components/RestaurantFilterControls";
+import { photoUrl } from "@/lib/photoUrl";
 import type { MapRestaurant } from "@forkd/ui";
 
-const DynamicMap = dynamic<{ restaurants: MapRestaurant[]; height?: string }>(
-  () => import("@forkd/ui").then((m) => m.RestaurantMap),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="flex items-center justify-center rounded-lg bg-gray-100"
-        style={{ height: "calc(100dvh - 240px)" }}
-      >
-        <Spinner size="lg" />
-      </div>
-    ),
-  }
-);
+const DynamicMap = dynamic<{
+  restaurants: MapRestaurant[];
+  height?: string;
+  userLocation?: { latitude: number; longitude: number } | null;
+}>(() => import("@forkd/ui").then((m) => m.RestaurantMap), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="flex items-center justify-center rounded-lg bg-gray-100"
+      style={{ height: "calc(100dvh - 240px)" }}
+    >
+      <Spinner size="lg" />
+    </div>
+  ),
+});
 
 export function MapClientWrapper() {
   const { filters, updateFilter, resetFilters } = useRestaurantFilters();
   const [searchValue, setSearchValue] = useState(filters.search ?? "");
   const hasSetHomeState = useRef(false);
+  const { location: userLocation, isLocating, refresh: refreshLocation } = useUserLocation();
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -68,6 +73,7 @@ export function MapClientWrapper() {
     longitude: r.longitude,
     googleRating: r.googleRating ?? null,
     googleRatingsTotal: r.googleRatingsTotal ?? null,
+    coverPhotoUrl: r.coverPhoto ? photoUrl(r.id, r.coverPhoto.id, "thumb") : null,
   }));
 
   return (
@@ -97,7 +103,7 @@ export function MapClientWrapper() {
 
       {/* isolate creates a CSS stacking context so Leaflet's internal z-indexes
           (400–1000+) are contained here and don't overlap the Navbar or Drawer */}
-      <div className="isolate">
+      <div className="relative isolate">
         {isLoading ? (
           <div
             className="flex items-center justify-center rounded-lg bg-gray-100"
@@ -106,8 +112,22 @@ export function MapClientWrapper() {
             <Spinner size="lg" />
           </div>
         ) : (
-          <DynamicMap restaurants={mapRestaurants} height="calc(100dvh - 240px)" />
+          <DynamicMap
+            restaurants={mapRestaurants}
+            height="calc(100dvh - 240px)"
+            userLocation={userLocation}
+          />
         )}
+        <button
+          onClick={refreshLocation}
+          className="absolute bottom-4 right-4 z-[1000] rounded-full bg-white p-2 shadow-md"
+          aria-label="My location"
+          title={isLocating ? "Getting location…" : "My location"}
+        >
+          <LocateFixed
+            className={`h-5 w-5 ${isLocating ? "animate-pulse text-blue-400" : userLocation ? "text-blue-600" : "text-gray-500"}`}
+          />
+        </button>
       </div>
     </main>
   );
