@@ -16,13 +16,11 @@ const DynamicMap = dynamic<{
   restaurants: MapRestaurant[];
   height?: string;
   userLocation?: { latitude: number; longitude: number } | null;
+  locationZoom?: { version: number; radiusMiles?: number };
 }>(() => import("@forkd/ui").then((m) => m.RestaurantMap), {
   ssr: false,
   loading: () => (
-    <div
-      className="flex items-center justify-center rounded-lg bg-gray-100"
-      style={{ height: "calc(100dvh - 240px)" }}
-    >
+    <div className="flex h-full items-center justify-center rounded-lg bg-gray-100">
       <Spinner size="lg" />
     </div>
   ),
@@ -32,7 +30,13 @@ export function MapClientWrapper() {
   const { filters, updateFilter, resetFilters } = useRestaurantFilters();
   const [searchValue, setSearchValue] = useState(filters.search ?? "");
   const hasSetHomeState = useRef(false);
-  const { location: userLocation, isLocating, refresh: refreshLocation } = useUserLocation();
+  const {
+    location: userLocation,
+    isLocating,
+    refresh: refreshLocation,
+    zoomVersion,
+  } = useUserLocation();
+  const { data: radiusMiles } = trpc.config.locationRadiusMiles.useQuery();
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -104,29 +108,29 @@ export function MapClientWrapper() {
       {/* isolate creates a CSS stacking context so Leaflet's internal z-indexes
           (400–1000+) are contained here and don't overlap the Navbar or Drawer */}
       <div className="relative isolate">
-        {isLoading ? (
-          <div
-            className="flex items-center justify-center rounded-lg bg-gray-100"
-            style={{ height: "calc(100dvh - 240px)" }}
-          >
-            <Spinner size="lg" />
-          </div>
-        ) : (
-          <DynamicMap
-            restaurants={mapRestaurants}
-            height="calc(100dvh - 240px)"
-            userLocation={userLocation}
-          />
-        )}
+        <div className="h-[50dvh] sm:h-[calc(100dvh-240px)]">
+          {isLoading ? (
+            <div className="flex h-full items-center justify-center rounded-lg bg-gray-100">
+              <Spinner size="lg" />
+            </div>
+          ) : (
+            <DynamicMap
+              restaurants={mapRestaurants}
+              height="100%"
+              userLocation={userLocation}
+              locationZoom={
+                userLocation ? { version: zoomVersion, radiusMiles: radiusMiles ?? 25 } : undefined
+              }
+            />
+          )}
+        </div>
         <button
           onClick={refreshLocation}
-          className="absolute bottom-4 right-4 z-[1000] rounded-full bg-white p-2 shadow-md"
+          className="absolute bottom-4 right-4 z-[1000] rounded-full bg-blue-500 p-2.5 text-white shadow-lg transition-colors hover:bg-blue-600"
           aria-label="My location"
           title={isLocating ? "Getting location…" : "My location"}
         >
-          <LocateFixed
-            className={`h-5 w-5 ${isLocating ? "animate-pulse text-blue-400" : userLocation ? "text-blue-600" : "text-gray-500"}`}
-          />
+          <LocateFixed className={`h-5 w-5 ${isLocating ? "animate-pulse" : ""}`} />
         </button>
       </div>
     </main>

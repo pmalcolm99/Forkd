@@ -12,6 +12,7 @@ const BASE_TABS = [
   { key: "ai", label: "AI (Claude)", href: "/admin/ai" },
   { key: "transcription", label: "Transcription", href: "/admin/transcription" },
   { key: "google-places", label: "Google Places", href: "/admin/google-places" },
+  { key: "map", label: "Map", href: "/admin/map" },
 ] as const;
 
 const OWNER_TABS = [{ key: "backup", label: "Backup", href: "/admin/backup" }] as const;

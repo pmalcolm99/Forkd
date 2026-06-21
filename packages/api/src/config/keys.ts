@@ -50,6 +50,17 @@ export const CONFIG_KEYS = [
     requiredRole: "owner",
     valueType: "string",
   },
+  {
+    key: "map.location_radius_miles",
+    isSecret: false,
+    requiredRole: "admin",
+    valueType: "string",
+    defaultValue: "25",
+    validator: z.string().refine((v) => {
+      const n = Number(v);
+      return Number.isInteger(n) && n >= 1 && n <= 500;
+    }, "Must be a whole number between 1 and 500"),
+  },
 ] as const satisfies ConfigKeyDef[];
 
 export const CONFIG_KEY_MAP = new Map<string, ConfigKeyDef>(

@@ -26,6 +26,7 @@ export function useUserLocation() {
     readStored
   );
   const [isLocating, setIsLocating] = useState(false);
+  const [zoomVersion, setZoomVersion] = useState(0);
 
   function refresh() {
     if (typeof navigator === "undefined" || !navigator.geolocation) return;
@@ -34,6 +35,7 @@ export function useUserLocation() {
       (pos) => {
         const loc = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
         setLocation(loc);
+        setZoomVersion((v) => v + 1);
         const entry: StoredEntry = { ...loc, storedAt: Date.now() };
         localStorage.setItem(LOCATION_KEY, JSON.stringify(entry));
         setIsLocating(false);
@@ -44,5 +46,5 @@ export function useUserLocation() {
     );
   }
 
-  return { location, isLocating, refresh };
+  return { location, isLocating, refresh, zoomVersion };
 }

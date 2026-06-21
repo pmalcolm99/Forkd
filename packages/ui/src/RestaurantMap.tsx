@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
@@ -24,6 +25,7 @@ interface Props {
   restaurants: MapRestaurant[];
   height?: string;
   userLocation?: { latitude: number; longitude: number } | null;
+  locationZoom?: { version: number; radiusMiles?: number };
 }
 
 interface FitBoundsProps {
@@ -48,7 +50,48 @@ function FitBounds({ restaurants }: FitBoundsProps) {
   return null;
 }
 
-export function RestaurantMap({ restaurants, height = "600px", userLocation }: Props) {
+interface ZoomToUserLocationProps {
+  locationZoom: { version: number; radiusMiles?: number };
+  userLocation: { latitude: number; longitude: number };
+  restaurants: MapRestaurant[];
+}
+
+function ZoomToUserLocation({ locationZoom, userLocation, restaurants }: ZoomToUserLocationProps) {
+  const map = useMap();
+  const lastVersionRef = useRef(-1);
+
+  useEffect(() => {
+    if (locationZoom.version <= 0 || locationZoom.version === lastVersionRef.current) return;
+    lastVersionRef.current = locationZoom.version;
+
+    if (locationZoom.radiusMiles) {
+      const R = locationZoom.radiusMiles;
+      const latOff = R / 69.0;
+      const lngOff = R / (69.0 * Math.cos((userLocation.latitude * Math.PI) / 180));
+      map.fitBounds([
+        [userLocation.latitude - latOff, userLocation.longitude - lngOff],
+        [userLocation.latitude + latOff, userLocation.longitude + lngOff],
+      ]);
+    } else {
+      const points: [number, number][] = [
+        [userLocation.latitude, userLocation.longitude],
+        ...restaurants.map(
+          (r) => [parseFloat(r.latitude), parseFloat(r.longitude)] as [number, number]
+        ),
+      ];
+      map.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
+    }
+  }, [locationZoom.version]); // intentional — only zoom when user explicitly taps the button
+
+  return null;
+}
+
+export function RestaurantMap({
+  restaurants,
+  height = "600px",
+  userLocation,
+  locationZoom,
+}: Props) {
   return (
     <MapContainer center={[39.83, -98.58]} zoom={4} style={{ height, width: "100%" }}>
       <TileLayer
@@ -56,6 +99,13 @@ export function RestaurantMap({ restaurants, height = "600px", userLocation }: P
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
       <FitBounds restaurants={restaurants} />
+      {userLocation && locationZoom && (
+        <ZoomToUserLocation
+          locationZoom={locationZoom}
+          userLocation={userLocation}
+          restaurants={restaurants}
+        />
+      )}
       {userLocation && (
         <CircleMarker
           center={[userLocation.latitude, userLocation.longitude]}

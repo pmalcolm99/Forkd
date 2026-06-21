@@ -10,6 +10,7 @@ const DynamicMap = dynamic<{
   restaurants: MapRestaurant[];
   height?: string;
   userLocation?: { latitude: number; longitude: number } | null;
+  locationZoom?: { version: number; radiusMiles?: number };
 }>(() => import("@forkd/ui").then((m) => m.RestaurantMap), { ssr: false });
 
 interface Props {
@@ -33,7 +34,12 @@ export function DetailMap({
   googleRatingsTotal,
   coverPhotoUrl,
 }: Props) {
-  const { location: userLocation, isLocating, refresh: refreshLocation } = useUserLocation();
+  const {
+    location: userLocation,
+    isLocating,
+    refresh: refreshLocation,
+    zoomVersion,
+  } = useUserLocation();
 
   return (
     <div className="relative">
@@ -52,16 +58,15 @@ export function DetailMap({
         ]}
         height="280px"
         userLocation={userLocation}
+        locationZoom={userLocation ? { version: zoomVersion } : undefined}
       />
       <button
         onClick={refreshLocation}
-        className="absolute bottom-3 right-3 z-[1000] rounded-full bg-white p-1.5 shadow-md"
+        className="absolute bottom-3 right-3 z-[1000] rounded-full bg-blue-500 p-1.5 text-white shadow-lg transition-colors hover:bg-blue-600"
         aria-label="My location"
         title={isLocating ? "Getting location…" : "My location"}
       >
-        <LocateFixed
-          className={`h-4 w-4 ${isLocating ? "animate-pulse text-blue-400" : userLocation ? "text-blue-600" : "text-gray-500"}`}
-        />
+        <LocateFixed className={`h-4 w-4 ${isLocating ? "animate-pulse" : ""}`} />
       </button>
     </div>
   );
