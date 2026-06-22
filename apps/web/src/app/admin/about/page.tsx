@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { Card, CardBody } from "@heroui/react";
 import { serverTrpc } from "@/lib/trpc/server";
 import { AdminTabs } from "../_components/AdminTabs";
 import { RestartButton } from "../_components/RestartButton";
@@ -8,7 +9,9 @@ export default async function AdminAboutPage() {
   const caller = await serverTrpc();
   const me = await caller.auth.me();
 
-  const version = process.env.npm_package_version ?? "unknown";
+  // APP_VERSION / APP_GIT_SHA are inlined at build time by next.config.ts.
+  const version = process.env.APP_VERSION ?? "unknown";
+  const gitSha = (process.env.APP_GIT_SHA ?? "dev").slice(0, 7);
 
   return (
     <>
@@ -16,39 +19,45 @@ export default async function AdminAboutPage() {
       <AdminTabs isOwner={!!me.isOwner} />
 
       <div className="space-y-6">
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold">About Forkd</h2>
-          <dl className="space-y-2 text-sm">
-            <div className="flex gap-4">
-              <dt className="w-32 font-medium text-gray-500">Version</dt>
-              <dd className="text-gray-900">{version}</dd>
-            </div>
-            <div className="flex gap-4">
-              <dt className="w-32 font-medium text-gray-500">Source</dt>
-              <dd>
-                <a
-                  href="https://github.com/norish-recipes/norish"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 underline"
-                >
-                  GitHub
-                </a>
-              </dd>
-            </div>
-          </dl>
-        </div>
+        <Card>
+          <CardBody className="p-6">
+            <h2 className="mb-4 text-lg font-semibold">About Forkd</h2>
+            <dl className="space-y-2 text-sm">
+              <div className="flex gap-4">
+                <dt className="w-32 font-medium text-default-500">Version</dt>
+                <dd className="text-foreground">
+                  v{version} ({gitSha})
+                </dd>
+              </div>
+              <div className="flex gap-4">
+                <dt className="w-32 font-medium text-default-500">Source</dt>
+                <dd>
+                  <a
+                    href="https://github.com/pmalcolm99/Forkd"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    GitHub
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </CardBody>
+        </Card>
 
         {!!me.isOwner && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6">
-            <h2 className="mb-2 text-lg font-semibold">Server restart</h2>
-            <p className="mb-4 text-sm text-gray-500">
-              Gracefully restarts the webapp container. Docker automatically brings it back within
-              5–15 seconds. Use this after changing configuration if the app is behaving
-              unexpectedly.
-            </p>
-            <RestartButton />
-          </div>
+          <Card>
+            <CardBody className="p-6">
+              <h2 className="mb-2 text-lg font-semibold">Server restart</h2>
+              <p className="mb-4 text-sm text-default-500">
+                Gracefully restarts the webapp container. Docker automatically brings it back within
+                5–15 seconds. Use this after changing configuration if the app is behaving
+                unexpectedly.
+              </p>
+              <RestartButton />
+            </CardBody>
+          </Card>
         )}
       </div>
     </>

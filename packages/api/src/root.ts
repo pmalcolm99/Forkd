@@ -7,6 +7,7 @@ import { usersRouter } from "./routers/users";
 import { restaurantsRouter } from "./routers/restaurants";
 import { reviewsRouter } from "./routers/reviews";
 import { photosRouter } from "./routers/photos";
+import { storageRouter } from "./routers/storage";
 
 export const appRouter = router({
   auth: authRouter,
@@ -17,6 +18,7 @@ export const appRouter = router({
   restaurants: restaurantsRouter,
   reviews: reviewsRouter,
   photos: photosRouter,
+  storage: storageRouter,
 });
 
 export type AppRouter = typeof appRouter;

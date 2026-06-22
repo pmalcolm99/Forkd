@@ -18,6 +18,7 @@ import {
   Button,
   Link,
 } from "@heroui/react";
+import { RotateCw } from "lucide-react";
 
 interface Props {
   userName: string | null;
@@ -94,6 +95,20 @@ export function Header({ userName, isAdmin, isDev }: Props) {
       </NavbarContent>
 
       <NavbarContent justify="end">
+        {/* Reload the page — primarily for the installed PWA, which has no browser
+            refresh control. A full reload refreshes both server-rendered data and
+            any client-side query caches. */}
+        <NavbarItem>
+          <Button
+            isIconOnly
+            variant="light"
+            size="sm"
+            aria-label="Refresh"
+            onPress={() => window.location.reload()}
+          >
+            <RotateCw className="h-5 w-5" />
+          </Button>
+        </NavbarItem>
         <Dropdown>
           <DropdownTrigger>
             <Button variant="flat" size="sm">

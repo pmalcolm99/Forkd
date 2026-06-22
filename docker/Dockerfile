@@ -36,6 +36,12 @@ WORKDIR /app
 # Copy all source on top of the installed deps
 COPY . .
 
+# Git commit SHA, passed by CI as --build-arg. next.config.ts reads GIT_SHA and
+# inlines it as APP_GIT_SHA so the About page can show the exact build. Defaults
+# to "dev" for local builds that don't pass it.
+ARG GIT_SHA=dev
+ENV GIT_SHA=$GIT_SHA
+
 # Build only the web app (and the workspace packages it depends on)
 RUN pnpm build --filter=@forkd/web
 

@@ -10,7 +10,18 @@ export const createTRPCContext = async ({
   shutdownFn,
 }: {
   req: Request;
-  fileStore?: { deletePhotoFiles: (restaurantId: string, photoId: string) => Promise<void> };
+  fileStore?: {
+    deletePhotoFiles: (restaurantId: string, photoId: string) => Promise<void>;
+    getStorageUsage?: () => Promise<{
+      uploadsBytes: number;
+      backupsBytes: number;
+      diskTotalBytes: number;
+      diskFreeBytes: number;
+    }>;
+    listAllUploadFiles?: () => Promise<{ relPath: string; byteSize: number; mtimeMs: number }[]>;
+    deleteUploadFile?: (relPath: string) => Promise<void>;
+    clearOrphanedVideos?: () => Promise<{ count: number; freedBytes: number }>;
+  };
   shutdownFn?: (reason: string, actorId: string) => Promise<void>;
 }) => {
   const session = await auth.api.getSession({ headers: req.headers });

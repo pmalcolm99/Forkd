@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@heroui/react";
+import { Button, Card, CardBody } from "@heroui/react";
 
 export function ExportSection() {
   const [isDownloading, setIsDownloading] = useState(false);
@@ -34,18 +34,20 @@ export function ExportSection() {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6">
-      <h2 className="text-lg font-semibold">Export Restaurant Data</h2>
-      <p className="mt-1 text-sm text-gray-500">
-        Download all restaurants, cuisine types, and reviews as a JSON file. Photos are not
-        included.
-      </p>
-      <div className="mt-4">
-        <Button color="primary" isLoading={isDownloading} onPress={handleDownload}>
-          Download Export
-        </Button>
-      </div>
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-    </div>
+    <Card>
+      <CardBody className="p-6">
+        <h2 className="text-lg font-semibold">Export Restaurant Data</h2>
+        <p className="mt-1 text-sm text-default-500">
+          Download all restaurants, cuisine types, and reviews as a JSON file. Photos are not
+          included.
+        </p>
+        <div className="mt-4">
+          <Button color="primary" isLoading={isDownloading} onPress={handleDownload}>
+            Download Export
+          </Button>
+        </div>
+        {error && <p className="mt-3 text-sm text-danger">{error}</p>}
+      </CardBody>
+    </Card>
   );
 }
