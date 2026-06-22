@@ -56,10 +56,10 @@ export function DevSelectUserForm({ users }: Props) {
       )}
 
       {users.length === 0 ? (
-        <p className="text-center text-sm text-gray-500">No users yet — create one below.</p>
+        <p className="text-center text-sm text-default-500">No users yet — create one below.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-gray-600">Sign in as:</p>
+          <p className="text-sm font-medium text-default-600">Sign in as:</p>
           {users.map((u) => {
             const label =
               u.firstName && u.lastName ? `${u.firstName} ${u.lastName} (${u.email})` : u.email;
@@ -84,7 +84,7 @@ export function DevSelectUserForm({ users }: Props) {
       <Divider />
 
       <form onSubmit={handleCreate} className="flex flex-col gap-3">
-        <p className="text-sm font-medium text-gray-600">Create new user:</p>
+        <p className="text-sm font-medium text-default-600">Create new user:</p>
         <Input
           label="Email"
           type="email"

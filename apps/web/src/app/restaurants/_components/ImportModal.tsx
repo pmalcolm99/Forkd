@@ -101,7 +101,7 @@ export function ImportModal({ isOpen, onClose }: Props) {
                 isInvalid={!!urlError}
                 errorMessage={urlError ?? undefined}
               />
-              <p className="text-sm text-gray-500">Supported: TikTok, YouTube, Facebook</p>
+              <p className="text-sm text-default-500">Supported: TikTok, YouTube, Facebook</p>
             </>
           ) : status === "failed" ? (
             <p className="text-danger text-sm">
@@ -110,8 +110,10 @@ export function ImportModal({ isOpen, onClose }: Props) {
           ) : (
             <div className="flex flex-col items-center gap-3 py-4">
               <Spinner size="lg" />
-              <p className="text-sm text-gray-600">{STATUS_LABELS[status ?? "queued"] ?? status}</p>
-              {step && status !== "queued" && <p className="text-xs text-gray-400">{step}</p>}
+              <p className="text-sm text-default-600">
+                {STATUS_LABELS[status ?? "queued"] ?? status}
+              </p>
+              {step && status !== "queued" && <p className="text-xs text-default-400">{step}</p>}
             </div>
           )}
         </ModalBody>

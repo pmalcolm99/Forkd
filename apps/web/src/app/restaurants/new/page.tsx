@@ -6,6 +6,7 @@ import { Alert, Button, Input } from "@heroui/react";
 import type { CreateRestaurantInput } from "@forkd/shared";
 import { countryCodeEnum, usStateEnum } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
+import { LinkButton } from "@/components/LinkButton";
 import { RestaurantForm } from "../_components/RestaurantForm";
 
 type Step = "search" | "form";
@@ -49,6 +50,9 @@ export default function NewRestaurantPage() {
   if (skipSearch || step === "form") {
     return (
       <main className="mx-auto max-w-xl p-6">
+        <LinkButton href="/restaurants" variant="light" size="sm" className="mb-4 -ml-2">
+          ← All restaurants
+        </LinkButton>
         <h1 className="mb-6 text-2xl font-bold">Add restaurant</h1>
         {submitError && (
           <Alert color="danger" className="mb-4">
@@ -73,8 +77,11 @@ export default function NewRestaurantPage() {
 
   return (
     <main className="mx-auto max-w-xl p-6">
+      <LinkButton href="/restaurants" variant="light" size="sm" className="mb-4 -ml-2">
+        ← All restaurants
+      </LinkButton>
       <h1 className="mb-6 text-2xl font-bold">Add restaurant</h1>
-      <p className="mb-4 text-sm text-gray-500">
+      <p className="mb-4 text-sm text-default-500">
         Search Google Places to auto-fill restaurant details, or skip to enter them manually.
       </p>
 
@@ -113,7 +120,7 @@ export default function NewRestaurantPage() {
       )}
 
       {searched && results.length === 0 && !searchFailed && (
-        <p className="mb-4 text-sm text-gray-500">No results found.</p>
+        <p className="mb-4 text-sm text-default-500">No results found.</p>
       )}
 
       {results.length > 0 && (
@@ -122,7 +129,7 @@ export default function NewRestaurantPage() {
             <button
               key={result.placeId}
               type="button"
-              className="rounded-lg border p-3 text-left hover:bg-gray-50 cursor-pointer"
+              className="rounded-lg border p-3 text-left hover:bg-default-100 cursor-pointer"
               onClick={() => {
                 // Country/state come straight from Google address components.
                 const country = countryCodeEnum.safeParse(result.countryCode).data ?? "US";
@@ -144,9 +151,9 @@ export default function NewRestaurantPage() {
               }}
             >
               <p className="font-medium">{result.name}</p>
-              <p className="text-sm text-gray-500">{result.formattedAddress}</p>
+              <p className="text-sm text-default-500">{result.formattedAddress}</p>
               {result.rating !== null && (
-                <p className="text-sm text-gray-400">Google rating: {result.rating} / 5</p>
+                <p className="text-sm text-default-400">Google rating: {result.rating} / 5</p>
               )}
             </button>
           ))}

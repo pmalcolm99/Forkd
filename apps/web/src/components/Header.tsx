@@ -18,7 +18,7 @@ import {
   Button,
   Link,
 } from "@heroui/react";
-import { RotateCw } from "lucide-react";
+import { Plus, RotateCw } from "lucide-react";
 
 interface Props {
   userName: string | null;
@@ -109,6 +109,22 @@ export function Header({ userName, isAdmin, isDev }: Props) {
             <RotateCw className="h-5 w-5" />
           </Button>
         </NavbarItem>
+        {/* Quick "add restaurant" — shown everywhere except the list page, which
+            already has its own Add button. */}
+        {pathname !== "/" && pathname !== "/restaurants" && (
+          <NavbarItem>
+            <Button
+              as={NextLink}
+              href="/restaurants/new"
+              isIconOnly
+              variant="light"
+              size="sm"
+              aria-label="Add restaurant"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </NavbarItem>
+        )}
         <Dropdown>
           <DropdownTrigger>
             <Button variant="flat" size="sm">

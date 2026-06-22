@@ -48,9 +48,20 @@ export default function EditRestaurantPage() {
     <main className="mx-auto max-w-xl p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Edit restaurant</h1>
-        <Button as={Link} href={`/restaurants/${id}`} variant="flat">
-          Cancel
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button as={Link} href={`/restaurants/${id}`} variant="flat">
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="restaurant-edit-form"
+            color="primary"
+            isLoading={isPending}
+            isDisabled={isPending}
+          >
+            Update
+          </Button>
+        </div>
       </div>
       {isDuplicate && (
         <Alert color="warning" className="mb-4">
@@ -59,6 +70,7 @@ export default function EditRestaurantPage() {
         </Alert>
       )}
       <RestaurantForm
+        formId="restaurant-edit-form"
         defaultValues={restaurantRowToInput(data)}
         onSubmit={handleSubmit}
         isSubmitting={isPending}

@@ -6,6 +6,7 @@ module.exports = {
     heroui({
       defaultTheme: "dark",
       themes: {
+        // Forkd Dark (default) — green accent on near-black.
         dark: {
           colors: {
             background: "#0a0a0a",
@@ -33,6 +34,134 @@ module.exports = {
             secondary: {
               DEFAULT: "#484848",
               foreground: "#ededed",
+            },
+          },
+        },
+        // Midnight — blue accent on deep navy.
+        midnight: {
+          extend: "dark",
+          colors: {
+            background: "#0b1020",
+            foreground: "#e6ebf5",
+            divider: "rgba(255,255,255,0.1)",
+            focus: "#3b82f6",
+            content1: "#121a2e",
+            content2: "#1a2440",
+            content3: "#233056",
+            content4: "#2c3a66",
+            primary: {
+              "50": "#0b1f3a",
+              "100": "#0e2a52",
+              "200": "#15407e",
+              "300": "#1d56aa",
+              "400": "#2f6fd0",
+              "500": "#3b82f6",
+              "600": "#5d97f8",
+              "700": "#84b2fa",
+              "800": "#aecdfc",
+              "900": "#d7e6fe",
+              DEFAULT: "#2f6fd0",
+              foreground: "#ffffff",
+            },
+            secondary: {
+              DEFAULT: "#3a4566",
+              foreground: "#e6ebf5",
+            },
+          },
+        },
+        // Amber — warm amber accent on warm near-black.
+        amber: {
+          extend: "dark",
+          colors: {
+            background: "#161310",
+            foreground: "#f0e9e0",
+            divider: "rgba(255,255,255,0.1)",
+            focus: "#d97706",
+            content1: "#211c16",
+            content2: "#2b251d",
+            content3: "#352d23",
+            content4: "#3f3529",
+            primary: {
+              "50": "#2a1c06",
+              "100": "#3d2908",
+              "200": "#5c3f0c",
+              "300": "#7c5510",
+              "400": "#a06d13",
+              "500": "#d97706",
+              "600": "#f59e0b",
+              "700": "#fbbf24",
+              "800": "#fcd34d",
+              "900": "#fde68a",
+              DEFAULT: "#d97706",
+              foreground: "#1a1206",
+            },
+            secondary: {
+              DEFAULT: "#4a4035",
+              foreground: "#f0e9e0",
+            },
+          },
+        },
+        // Plum — purple accent on dark aubergine.
+        plum: {
+          extend: "dark",
+          colors: {
+            background: "#140d18",
+            foreground: "#ece6f0",
+            divider: "rgba(255,255,255,0.1)",
+            focus: "#a855f7",
+            content1: "#1e1424",
+            content2: "#281a30",
+            content3: "#33223e",
+            content4: "#3e2a4b",
+            primary: {
+              "50": "#2a1640",
+              "100": "#3b1d59",
+              "200": "#592a86",
+              "300": "#7738b3",
+              "400": "#9450d6",
+              "500": "#a855f7",
+              "600": "#b975f9",
+              "700": "#cb98fb",
+              "800": "#ddbcfc",
+              "900": "#efe0fe",
+              DEFAULT: "#9450d6",
+              foreground: "#ffffff",
+            },
+            secondary: {
+              DEFAULT: "#473a52",
+              foreground: "#ece6f0",
+            },
+          },
+        },
+        // Forkd Light — brand green on white/zinc.
+        light: {
+          extend: "light",
+          colors: {
+            background: "#ffffff",
+            foreground: "#18181b",
+            divider: "rgba(0,0,0,0.12)",
+            focus: "#3d7a52",
+            content1: "#ffffff",
+            content2: "#f4f4f5",
+            content3: "#e4e4e7",
+            content4: "#d4d4d8",
+            primary: {
+              "50": "#ecf6f0",
+              "100": "#d2e9dd",
+              "200": "#a8d4bd",
+              "300": "#7cbf9c",
+              "400": "#54a87e",
+              "500": "#3d7a52",
+              "600": "#336847",
+              "700": "#29553a",
+              "800": "#1f422d",
+              "900": "#15301f",
+              DEFAULT: "#3d7a52",
+              foreground: "#ffffff",
+            },
+            secondary: {
+              DEFAULT: "#d4d4d8",
+              foreground: "#18181b",
             },
           },
         },

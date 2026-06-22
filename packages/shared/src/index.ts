@@ -7,6 +7,7 @@ export * from "./photoPaths";
 export * from "./restaurantStatus";
 export * from "./usStates";
 export * from "./countries";
+export * from "./themes";
 export * from "./formatRelativeTime";
 export { formatFamilyAverage } from "./familyAverage";
 export { parseRestaurantFilters } from "./parseRestaurantFilters";

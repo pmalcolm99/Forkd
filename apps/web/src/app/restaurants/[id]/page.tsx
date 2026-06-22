@@ -97,7 +97,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
       </div>
 
       {(row.latitude === null || row.longitude === null) && (
-        <p className="mb-4 text-sm text-amber-600">
+        <p className="mb-4 text-sm text-warning">
           No map coordinates — use &ldquo;Refresh metadata&rdquo; to fetch them so this restaurant
           appears on the map.
         </p>
@@ -105,25 +105,25 @@ export default async function RestaurantDetailPage({ params }: Props) {
 
       <div className="mb-6 rounded-lg border p-4">
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
-          <dt className="font-medium text-gray-500">Address</dt>
+          <dt className="font-medium text-default-500">Address</dt>
           <dd className="break-words">{row.address}</dd>
 
           {row.state && (
             <>
-              <dt className="font-medium text-gray-500">State</dt>
+              <dt className="font-medium text-default-500">State</dt>
               <dd>{row.state}</dd>
             </>
           )}
 
-          <dt className="font-medium text-gray-500">Country</dt>
+          <dt className="font-medium text-default-500">Country</dt>
           <dd>{getCountryName(row.country)}</dd>
 
-          <dt className="font-medium text-gray-500">Cuisine</dt>
+          <dt className="font-medium text-default-500">Cuisine</dt>
           <dd>{row.cuisineType?.name ?? "—"}</dd>
 
           {row.website && (
             <>
-              <dt className="font-medium text-gray-500">Website</dt>
+              <dt className="font-medium text-default-500">Website</dt>
               <dd>
                 <a
                   href={row.website}
@@ -139,16 +139,16 @@ export default async function RestaurantDetailPage({ params }: Props) {
 
           {row.description && (
             <>
-              <dt className="font-medium text-gray-500">Description</dt>
+              <dt className="font-medium text-default-500">Description</dt>
               <dd className="max-w-prose break-words">{row.description}</dd>
             </>
           )}
 
-          <dt className="font-medium text-gray-500">Google rating</dt>
+          <dt className="font-medium text-default-500">Google rating</dt>
           <dd>
             {row.googleRating !== null ? `${parseFloat(row.googleRating)} / 5` : "—"}
             {row.googleRatingFetchedAt && (
-              <span className="ml-2 text-xs text-gray-400">
+              <span className="ml-2 text-xs text-default-400">
                 (updated {formatRelativeTime(row.googleRatingFetchedAt)})
               </span>
             )}
@@ -156,7 +156,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
         </dl>
       </div>
 
-      <p className="mb-4 text-sm text-gray-400">
+      <p className="mb-4 text-sm text-default-400">
         Added{addedBy ? ` by ${addedBy}` : ""} · {formatRelativeTime(row.createdAt)}
       </p>
 
@@ -188,7 +188,9 @@ export default async function RestaurantDetailPage({ params }: Props) {
           <ReviewCard key={r.id} review={r} isOwnReview={false} />
         ))}
 
-        {row.reviews.length === 0 && <p className="mt-2 text-sm text-gray-400">No reviews yet.</p>}
+        {row.reviews.length === 0 && (
+          <p className="mt-2 text-sm text-default-400">No reviews yet.</p>
+        )}
       </section>
 
       <section className="mb-8">
@@ -208,7 +210,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
             coverPhotoId={row.coverPhotoId ?? null}
           />
         ) : (
-          <p className="mt-2 text-sm text-gray-400">No photos yet.</p>
+          <p className="mt-2 text-sm text-default-400">No photos yet.</p>
         )}
       </section>
     </main>

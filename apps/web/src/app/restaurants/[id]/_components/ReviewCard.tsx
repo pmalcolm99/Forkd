@@ -13,11 +13,11 @@ interface Props {
 }
 
 function StarDisplay({ stars }: { stars: number | null }) {
-  if (stars == null) return <span className="text-sm text-gray-400">No rating</span>;
+  if (stars == null) return <span className="text-sm text-default-400">No rating</span>;
   return (
     <span aria-label={`${stars} out of 5 stars`}>
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} className={i < stars ? "text-yellow-400" : "text-gray-300"}>
+        <span key={i} className={i < stars ? "text-yellow-400" : "text-default-300"}>
           {i < stars ? "★" : "☆"}
         </span>
       ))}
@@ -42,7 +42,7 @@ export function ReviewCard({ review, isOwnReview }: Props) {
         </CardBody>
       )}
       <CardFooter className="flex items-center justify-between pt-1">
-        <span className="text-xs text-gray-400">{formatRelativeTime(review.updatedAt)}</span>
+        <span className="text-xs text-default-400">{formatRelativeTime(review.updatedAt)}</span>
         {isOwnReview && <ReviewActions review={review} restaurantId={review.restaurantId} />}
       </CardFooter>
     </Card>

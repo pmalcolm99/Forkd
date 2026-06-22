@@ -107,7 +107,7 @@ export function PhotoLightbox({
               ‹
             </Button>
 
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-default-500">
               {isGooglePhoto ? (
                 <>Photo: Google · {formatRelativeTime(photo.createdAt)}</>
               ) : (

@@ -115,7 +115,7 @@ export function ConfigKeyForm({ title, description, fields, testProcedure }: Con
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold">{title}</h2>
-        {description && <p className="mt-1 text-sm text-gray-500">{description}</p>}
+        {description && <p className="mt-1 text-sm text-default-500">{description}</p>}
       </div>
 
       <div className="space-y-4">
@@ -125,7 +125,7 @@ export function ConfigKeyForm({ title, description, fields, testProcedure }: Con
           if (field.isSecret) {
             return (
               <div key={field.key}>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-default-700">
                   {field.label}
                 </label>
                 {!state?.replacing ? (
@@ -171,7 +171,9 @@ export function ConfigKeyForm({ title, description, fields, testProcedure }: Con
 
           return (
             <div key={field.key}>
-              <label className="mb-1 block text-sm font-medium text-gray-700">{field.label}</label>
+              <label className="mb-1 block text-sm font-medium text-default-700">
+                {field.label}
+              </label>
               <Input
                 value={nonSecretValues[field.key] ?? ""}
                 onValueChange={(v) => setNonSecretValues((prev) => ({ ...prev, [field.key]: v }))}
@@ -182,7 +184,7 @@ export function ConfigKeyForm({ title, description, fields, testProcedure }: Con
         })}
       </div>
 
-      {saveError && <p className="text-sm text-red-600">{saveError}</p>}
+      {saveError && <p className="text-sm text-danger">{saveError}</p>}
 
       <div className="flex items-center gap-3">
         <Button isLoading={isBusy} onPress={handleSave} variant="flat">
@@ -194,9 +196,7 @@ export function ConfigKeyForm({ title, description, fields, testProcedure }: Con
           </Button>
         )}
         {typeof testStatus === "object" && (
-          <span
-            className={`text-sm font-medium ${testStatus.ok ? "text-green-600" : "text-red-600"}`}
-          >
+          <span className={`text-sm font-medium ${testStatus.ok ? "text-success" : "text-danger"}`}>
             {testStatus.ok ? "✓ Connection OK" : `✗ ${testStatus.error ?? "Test failed"}`}
           </span>
         )}

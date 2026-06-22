@@ -5,19 +5,20 @@ import { count, eq } from "drizzle-orm";
 import z from "zod";
 import { makeSignature } from "@forkd/auth";
 import { user, session } from "@forkd/db";
-import { logger, usStateEnum } from "@forkd/shared";
+import { logger, themeEnum, usStateEnum } from "@forkd/shared";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 const updateProfileSchema = z.object({
   firstName: z.string().min(1, "First name required").max(100).trim(),
   lastName: z.string().min(1, "Last name required").max(100).trim(),
   homeState: usStateEnum.nullable().optional(),
+  theme: themeEnum.nullable().optional(),
 });
 
 export const authRouter = router({
   me: protectedProcedure.query(({ ctx }) => {
-    const { id, email, firstName, lastName, isAdmin, isOwner, homeState } = ctx.user;
-    return { id, email, firstName, lastName, isAdmin, isOwner, homeState };
+    const { id, email, firstName, lastName, isAdmin, isOwner, homeState, theme } = ctx.user;
+    return { id, email, firstName, lastName, isAdmin, isOwner, homeState, theme };
   }),
 
   updateProfile: protectedProcedure.input(updateProfileSchema).mutation(async ({ input, ctx }) => {
@@ -29,6 +30,8 @@ export const authRouter = router({
         lastName: input.lastName,
         name,
         homeState: input.homeState ?? null,
+        // Only overwrite theme when provided, so non-theme profile saves keep it.
+        ...(input.theme !== undefined ? { theme: input.theme ?? null } : {}),
       })
       .where(eq(user.id, ctx.user.id));
     return { success: true };

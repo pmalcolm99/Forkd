@@ -20,7 +20,7 @@ const DynamicMap = dynamic<{
 }>(() => import("@forkd/ui").then((m) => m.RestaurantMap), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full items-center justify-center rounded-lg bg-gray-100">
+    <div className="flex h-full items-center justify-center rounded-lg bg-default-100">
       <Spinner size="lg" />
     </div>
   ),
@@ -101,7 +101,7 @@ export function MapClientWrapper() {
       />
 
       {missingCount > 0 && (
-        <p className="mb-3 text-sm text-gray-500">
+        <p className="mb-3 text-sm text-default-500">
           {missingCount} restaurant{missingCount !== 1 ? "s" : ""} not shown — no location data yet.
         </p>
       )}
@@ -111,7 +111,7 @@ export function MapClientWrapper() {
       <div className="relative isolate">
         <div className="h-[50dvh] sm:h-[calc(100dvh-240px)]">
           {isLoading ? (
-            <div className="flex h-full items-center justify-center rounded-lg bg-gray-100">
+            <div className="flex h-full items-center justify-center rounded-lg bg-default-100">
               <Spinner size="lg" />
             </div>
           ) : (

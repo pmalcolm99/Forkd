@@ -48,7 +48,7 @@ export function ReviewActions({ review, restaurantId }: Props) {
           <ModalBody>
             <p>Are you sure you want to delete your review? This cannot be undone.</p>
             {deleteMutation.error && (
-              <p className="text-sm text-red-500">{deleteMutation.error.message}</p>
+              <p className="text-sm text-danger">{deleteMutation.error.message}</p>
             )}
           </ModalBody>
           <ModalFooter>

@@ -18,7 +18,8 @@ export const RESTAURANT_STATUS_COLORS: Record<
   been_loved: { color: "success" },
   been_okay: { color: "warning" },
   been_disliked: { color: "danger" },
-  permanently_closed: { color: "default", className: "bg-gray-900 text-white" },
+  // Theme-aware: a solid neutral chip that adapts to light/dark via HeroUI tokens.
+  permanently_closed: { color: "default", className: "bg-default-300 text-default-foreground" },
 };
 
 export const RESTAURANT_STATUS_PIN_COLORS: Record<RestaurantStatus, string> = {

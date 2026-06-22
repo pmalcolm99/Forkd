@@ -125,14 +125,14 @@ export function UsersTable({ users, currentUserId, isOwner }: UsersTableProps) {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="font-medium">{u.name}</p>
-                <p className="truncate text-sm text-gray-500">{u.email}</p>
+                <p className="truncate text-sm text-default-500">{u.email}</p>
               </div>
               {roleBadge(u)}
             </div>
-            <p className="mt-1 text-xs text-gray-400" title={u.createdAt.toLocaleDateString()}>
+            <p className="mt-1 text-xs text-default-400" title={u.createdAt.toLocaleDateString()}>
               Joined {formatRelativeTime(u.createdAt)}
             </p>
-            <p className="mt-0.5 text-xs text-gray-400">
+            <p className="mt-0.5 text-xs text-default-400">
               Last active: {u.lastActiveAt ? formatRelativeTime(u.lastActiveAt) : "Never"}
             </p>
             {isOwner && !u.isOwner && u.id !== currentUserId && (
@@ -277,7 +277,7 @@ export function UsersTable({ users, currentUserId, isOwner }: UsersTableProps) {
             ) : (
               <p>This user will lose admin access and return to a regular user.</p>
             )}
-            {actionError && <p className="mt-2 text-sm text-red-600">{actionError}</p>}
+            {actionError && <p className="mt-2 text-sm text-danger">{actionError}</p>}
           </ModalBody>
           <ModalFooter>
             <Button variant="flat" onPress={closeModal}>
@@ -305,7 +305,7 @@ export function UsersTable({ users, currentUserId, isOwner }: UsersTableProps) {
               This permanently removes the user. Their restaurants will remain but won&apos;t show
               who added them.
             </p>
-            <p className="mt-2 text-sm font-medium text-gray-700">
+            <p className="mt-2 text-sm font-medium text-default-700">
               Type{" "}
               <span className="font-bold">
                 {confirmAction?.type === "remove"
@@ -320,7 +320,7 @@ export function UsersTable({ users, currentUserId, isOwner }: UsersTableProps) {
               placeholder="First name"
               className="mt-1"
             />
-            {actionError && <p className="mt-2 text-sm text-red-600">{actionError}</p>}
+            {actionError && <p className="mt-2 text-sm text-danger">{actionError}</p>}
           </ModalBody>
           <ModalFooter>
             <Button variant="flat" onPress={closeModal}>

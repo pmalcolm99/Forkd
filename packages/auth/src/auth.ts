@@ -49,6 +49,12 @@ export const auth = betterAuth({
         fieldName: "homeState",
         input: false,
       },
+      theme: {
+        type: "string" as const,
+        required: false,
+        fieldName: "theme",
+        input: false,
+      },
       lastActiveAt: {
         type: "date" as const,
         required: false,

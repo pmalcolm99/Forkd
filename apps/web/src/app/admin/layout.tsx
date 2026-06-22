@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <Link href="/" className="mb-4 inline-block text-sm text-gray-500 hover:text-gray-800">
+      <Link href="/" className="mb-4 inline-block text-sm text-default-500 hover:text-default-700">
         ← Home
       </Link>
       {children}

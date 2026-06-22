@@ -18,6 +18,9 @@ interface RestaurantFormProps {
   isSubmitting: boolean;
   submitLabel?: string;
   autoSuggest?: boolean;
+  // When set, the <form> gets this id so a submit button elsewhere on the page
+  // (e.g. a top "Update" button) can submit it via the `form` attribute.
+  formId?: string;
 }
 
 export function RestaurantForm({
@@ -26,6 +29,7 @@ export function RestaurantForm({
   isSubmitting,
   submitLabel = "Save restaurant",
   autoSuggest = false,
+  formId,
 }: RestaurantFormProps) {
   const { values, setField, errors, handleSubmit } = useZodForm(
     createRestaurantInput,
@@ -66,7 +70,7 @@ export function RestaurantForm({
   }, [autoSuggest, aiConfig?.configured, values.name]); // suggest is stable; ref guards single fire
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <form id={formId} onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <Input
         label="Name"
         isRequired

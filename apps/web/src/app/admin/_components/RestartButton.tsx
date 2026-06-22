@@ -90,14 +90,14 @@ export function RestartButton() {
 
   if (phase === "polling" || phase === "restarting") {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95">
-        <div className="flex max-w-sm flex-col items-center gap-4 rounded-xl border border-gray-200 bg-white p-8 text-center shadow-lg">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95">
+        <div className="flex max-w-sm flex-col items-center gap-4 rounded-xl border border-default-200 bg-content1 p-8 text-center shadow-lg">
           <Spinner size="lg" />
           <h2 className="text-lg font-semibold">
             {phase === "restarting" ? "Sending restart signal…" : "Server is restarting"}
           </h2>
           {phase === "polling" && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-default-500">
               This usually takes 5–15 seconds. This page will reload automatically when the server
               is back.
             </p>
@@ -109,11 +109,11 @@ export function RestartButton() {
 
   if (phase === "failed") {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-        <p className="font-medium text-red-800">Restart appears to have failed.</p>
-        <p className="mt-1 text-sm text-red-600">
-          Check <code className="rounded bg-red-100 px-1">docker compose logs webapp</code> from the
-          host.
+      <div className="rounded-lg border border-danger-200 bg-danger-50 p-4">
+        <p className="font-medium text-danger">Restart appears to have failed.</p>
+        <p className="mt-1 text-sm text-danger">
+          Check <code className="rounded bg-danger-100 px-1">docker compose logs webapp</code> from
+          the host.
         </p>
         <Button
           className="mt-3"

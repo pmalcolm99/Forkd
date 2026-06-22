@@ -56,7 +56,7 @@ function StarInput({
       {value != null && (
         <button
           type="button"
-          className="text-xs text-gray-400 underline"
+          className="text-xs text-default-400 underline"
           onClick={() => onChange(null)}
         >
           Clear rating
@@ -121,7 +121,7 @@ export function ReviewModal({ isOpen, onClose, restaurantId, existingReview }: P
             <div>
               <label className="mb-1 block text-sm font-medium">Rating</label>
               <StarInput value={values.stars} onChange={(v) => setField("stars", v as never)} />
-              {errors.stars && <p className="mt-1 text-xs text-red-500">{errors.stars}</p>}
+              {errors.stars && <p className="mt-1 text-xs text-danger">{errors.stars}</p>}
             </div>
 
             <div>
@@ -134,13 +134,13 @@ export function ReviewModal({ isOpen, onClose, restaurantId, existingReview }: P
                 isInvalid={!!errors.text}
                 errorMessage={errors.text}
               />
-              <p className="mt-1 text-right text-xs text-gray-400">
+              <p className="mt-1 text-right text-xs text-default-400">
                 {textLength} / {reviewTextMaxLength}
               </p>
             </div>
 
-            {formError && <p className="text-sm text-red-500">{formError}</p>}
-            {mutation.error && <p className="text-sm text-red-500">{mutation.error.message}</p>}
+            {formError && <p className="text-sm text-danger">{formError}</p>}
+            {mutation.error && <p className="text-sm text-danger">{mutation.error.message}</p>}
           </ModalBody>
           <ModalFooter>
             <Button variant="flat" type="button" onPress={onClose}>

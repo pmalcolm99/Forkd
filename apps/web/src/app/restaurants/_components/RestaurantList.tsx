@@ -116,7 +116,7 @@ export function RestaurantList() {
           </div>
         )}
         {!isLoading && (data?.items ?? []).length === 0 && (
-          <p className="py-8 text-center text-gray-400">No restaurants found.</p>
+          <p className="py-8 text-center text-default-400">No restaurants found.</p>
         )}
         <div className="flex flex-col gap-3">
           {(data?.items ?? []).map((row) => {
@@ -135,13 +135,13 @@ export function RestaurantList() {
                     className="h-14 w-14 shrink-0 rounded object-cover"
                   />
                 ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded bg-gray-100">
-                    <Utensils className="h-5 w-5 text-gray-400" />
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded bg-default-100">
+                    <Utensils className="h-5 w-5 text-default-400" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{row.name}</p>
-                  <p className="truncate text-sm text-gray-500">
+                  <p className="truncate text-sm text-default-500">
                     {[row.cuisineType?.name, row.state ?? getCountryName(row.country)]
                       .filter(Boolean)
                       .join(" · ")}
@@ -186,7 +186,7 @@ export function RestaurantList() {
           <TableBody
             isLoading={isLoading}
             loadingContent={<Spinner />}
-            emptyContent={<span className="text-gray-400">No restaurants found.</span>}
+            emptyContent={<span className="text-default-400">No restaurants found.</span>}
           >
             {(data?.items ?? []).map((row) => {
               const statusColor = RESTAURANT_STATUS_COLORS[row.status];
@@ -203,8 +203,8 @@ export function RestaurantList() {
                         className="h-12 w-12 rounded object-cover"
                       />
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100">
-                        <Utensils className="h-5 w-5 text-gray-400" />
+                      <div className="flex h-12 w-12 items-center justify-center rounded bg-default-100">
+                        <Utensils className="h-5 w-5 text-default-400" />
                       </div>
                     )}
                   </TableCell>
