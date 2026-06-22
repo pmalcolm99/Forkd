@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Input, Select, SelectItem, Textarea, Tooltip } from "@heroui/react";
 import type { CreateRestaurantInput } from "@forkd/shared";
 import { RESTAURANT_STATUS_LABELS, US_STATES, createRestaurantInput } from "@forkd/shared";
@@ -48,11 +48,17 @@ export function RestaurantForm({
     },
   });
 
+  const hasAutoSuggested = useRef(false);
   useEffect(() => {
+    if (hasAutoSuggested.current) return;
+    // aiConfig is async — on a first visit it's still undefined at mount, so an
+    // empty-deps effect would never fire (the previous bug: it only worked on the
+    // second visit once the query was cached). Re-run as deps resolve, but only once.
     if (autoSuggest && aiConfig?.configured && values.name) {
+      hasAutoSuggested.current = true;
       suggest.mutate({ name: values.name, address: values.address, website: values.website });
     }
-  }, []); // intentional empty deps — fires once on mount when autoSuggest is true
+  }, [autoSuggest, aiConfig?.configured, values.name]); // suggest is stable; ref guards single fire
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">

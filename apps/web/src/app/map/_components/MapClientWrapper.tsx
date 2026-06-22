@@ -33,6 +33,7 @@ export function MapClientWrapper() {
   const {
     location: userLocation,
     isLocating,
+    error: locationError,
     refresh: refreshLocation,
     zoomVersion,
   } = useUserLocation();
@@ -128,10 +129,15 @@ export function MapClientWrapper() {
           onClick={refreshLocation}
           className="absolute bottom-4 right-4 z-[1000] rounded-full bg-blue-500 p-2.5 text-white shadow-lg transition-colors hover:bg-blue-600"
           aria-label="My location"
-          title={isLocating ? "Getting location…" : "My location"}
+          title={isLocating ? "Getting location…" : (locationError ?? "My location")}
         >
           <LocateFixed className={`h-5 w-5 ${isLocating ? "animate-pulse" : ""}`} />
         </button>
+        {locationError && (
+          <p className="absolute bottom-4 left-4 z-[1000] max-w-[60%] rounded-md bg-white/90 px-2 py-1 text-xs text-danger shadow">
+            {locationError}
+          </p>
+        )}
       </div>
     </main>
   );

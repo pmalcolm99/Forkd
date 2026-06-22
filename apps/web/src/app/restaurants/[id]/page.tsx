@@ -103,9 +103,9 @@ export default async function RestaurantDetailPage({ params }: Props) {
       )}
 
       <div className="mb-6 rounded-lg border p-4">
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
           <dt className="font-medium text-gray-500">Address</dt>
-          <dd>{row.address}</dd>
+          <dd className="break-words">{row.address}</dd>
 
           <dt className="font-medium text-gray-500">State</dt>
           <dd>{row.state}</dd>
@@ -121,7 +121,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
                   href={row.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline"
+                  className="underline break-all"
                 >
                   {row.website}
                 </a>
@@ -132,7 +132,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
           {row.description && (
             <>
               <dt className="font-medium text-gray-500">Description</dt>
-              <dd className="max-w-prose">{row.description}</dd>
+              <dd className="max-w-prose break-words">{row.description}</dd>
             </>
           )}
 

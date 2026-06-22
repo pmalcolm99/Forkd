@@ -1,0 +1,24 @@
+# Dependencies — MUST be excluded. The build context is the repo root and the
+# Dockerfile does `COPY . .` on top of a fresh Alpine `pnpm install`. Copying the
+# host's node_modules clobbers the Alpine-native binaries (e.g. sharp's
+# linuxmusl-arm64 build gets overwritten by the host's darwin-arm64 build),
+# which breaks the app at runtime.
+**/node_modules
+
+# Build output and caches — rebuilt inside the image
+**/.next
+**/.turbo
+**/dist
+**/coverage
+
+# Secrets and local env — never bake into an image
+.env
+.env.*
+!.env.example
+
+# VCS and local junk
+.git
+.gitignore
+**/*.log
+.DS_Store
+images

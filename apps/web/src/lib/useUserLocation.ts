@@ -26,25 +26,44 @@ export function useUserLocation() {
     readStored
   );
   const [isLocating, setIsLocating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [zoomVersion, setZoomVersion] = useState(0);
 
   function refresh() {
-    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setError("Location isn't available on this device.");
+      return;
+    }
     setIsLocating(true);
+    setError(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
         setLocation(loc);
         setZoomVersion((v) => v + 1);
         const entry: StoredEntry = { ...loc, storedAt: Date.now() };
-        localStorage.setItem(LOCATION_KEY, JSON.stringify(entry));
+        try {
+          localStorage.setItem(LOCATION_KEY, JSON.stringify(entry));
+        } catch {
+          // ignore storage failures (private mode / quota) — location still works in-session
+        }
         setIsLocating(false);
       },
-      () => {
+      (err) => {
+        // Without surfacing this, a denied/timed-out request looks like a dead button.
+        setError(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission was denied."
+            : "Couldn't get your location. Try again."
+        );
         setIsLocating(false);
-      }
+      },
+      // timeout is essential: the default is Infinity, so on mobile the request can
+      // hang forever waiting for a GPS fix, which made the button appear dead until
+      // a full page reload. maximumAge:0 forces a fresh fix on every tap (a true refresh).
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 }
     );
   }
 
-  return { location, isLocating, refresh, zoomVersion };
+  return { location, isLocating, error, refresh, zoomVersion };
 }
