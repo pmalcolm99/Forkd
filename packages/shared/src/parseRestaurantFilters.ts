@@ -5,6 +5,7 @@ export function parseRestaurantFilters(params: URLSearchParams): ListRestaurants
   const raw = {
     status: rawStatus.length ? rawStatus : undefined,
     state: params.get("state") ?? undefined,
+    country: params.get("country") ?? undefined,
     cuisineTypeId: params.get("cuisineTypeId") ?? undefined,
     addedByUserId: params.get("addedByUserId") ?? undefined,
     search: params.get("search") ?? undefined,

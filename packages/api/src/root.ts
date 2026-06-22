@@ -8,6 +8,8 @@ import { restaurantsRouter } from "./routers/restaurants";
 import { reviewsRouter } from "./routers/reviews";
 import { photosRouter } from "./routers/photos";
 import { storageRouter } from "./routers/storage";
+import { statsRouter } from "./routers/stats";
+import { backupsRouter } from "./routers/backups";
 
 export const appRouter = router({
   auth: authRouter,
@@ -19,6 +21,8 @@ export const appRouter = router({
   reviews: reviewsRouter,
   photos: photosRouter,
   storage: storageRouter,
+  stats: statsRouter,
+  backups: backupsRouter,
 });
 
 export type AppRouter = typeof appRouter;

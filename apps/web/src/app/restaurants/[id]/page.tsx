@@ -6,6 +6,7 @@ import {
   RESTAURANT_STATUS_COLORS,
   RESTAURANT_STATUS_LABELS,
   formatRelativeTime,
+  getCountryName,
 } from "@forkd/shared";
 import { serverTrpc } from "@/lib/trpc/server";
 import { DeleteRestaurantButton } from "./_components/DeleteRestaurantButton";
@@ -107,8 +108,15 @@ export default async function RestaurantDetailPage({ params }: Props) {
           <dt className="font-medium text-gray-500">Address</dt>
           <dd className="break-words">{row.address}</dd>
 
-          <dt className="font-medium text-gray-500">State</dt>
-          <dd>{row.state}</dd>
+          {row.state && (
+            <>
+              <dt className="font-medium text-gray-500">State</dt>
+              <dd>{row.state}</dd>
+            </>
+          )}
+
+          <dt className="font-medium text-gray-500">Country</dt>
+          <dd>{getCountryName(row.country)}</dd>
 
           <dt className="font-medium text-gray-500">Cuisine</dt>
           <dd>{row.cuisineType?.name ?? "—"}</dd>

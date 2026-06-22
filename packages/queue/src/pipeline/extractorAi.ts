@@ -7,7 +7,10 @@ import { logger } from "@forkd/shared";
 export const extractionSchema = z.object({
   name: z.string().min(1),
   address: z.string(),
-  state: z.enum(usStateEnum.enumValues),
+  // ISO 3166-1 alpha-2 country code; defaults to US when Claude can't determine it.
+  country: z.string().length(2).default("US"),
+  // US state code, only when the restaurant is in the US. Optional/nullable otherwise.
+  state: z.enum(usStateEnum.enumValues).nullish(),
   cuisine: z.string(),
   description: z.string(),
   confidence: z.enum(["high", "medium", "low"]),
@@ -44,7 +47,8 @@ ${transcript || "(no transcript available)"}
 Return ONLY a JSON object with exactly these fields:
 - "name": restaurant name (required, non-empty string)
 - "address": street address or neighborhood/area (empty string if unknown)
-- "state": 2-letter US state code like "TX" or "NY" (required — infer from context; use your best guess based on the content)
+- "country": 2-letter ISO 3166-1 country code like "US", "JP", "FR" (infer from context; default to "US" if genuinely unclear)
+- "state": 2-letter US state code like "TX" or "NY" — ONLY when country is "US" (infer from context). Use null for non-US restaurants or if unknown
 - "cuisine": cuisine category inferred from the content — infer aggressively from food keywords (sushi/omakase/ramen/miso → "Japanese", tacos/enchiladas/birria → "Mexican", pasta/pizza/risotto → "Italian", pho/banh mi → "Vietnamese", BBQ/brisket/ribs → "BBQ", burgers/fries → "American", etc.). Empty string only if the cuisine is genuinely impossible to determine
 - "description": 1-2 sentence description of the restaurant (empty string if unknown)
 - "confidence": "high", "medium", or "low" — your confidence in the extracted restaurant name

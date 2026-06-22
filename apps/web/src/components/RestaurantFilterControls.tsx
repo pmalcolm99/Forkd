@@ -16,6 +16,7 @@ import {
 } from "@heroui/react";
 import { SlidersHorizontal, X } from "lucide-react";
 import {
+  COUNTRIES,
   RESTAURANT_STATUS_LABELS,
   US_STATES,
   restaurantStatusEnum,
@@ -61,6 +62,7 @@ export function RestaurantFilterControls({
   const activeFilterCount = [
     filters.status !== undefined,
     filters.state !== undefined,
+    filters.country !== undefined,
     filters.cuisineTypeId !== undefined,
     filters.addedByUserId !== undefined,
   ].filter(Boolean).length;
@@ -180,6 +182,19 @@ export function RestaurantFilterControls({
             </Select>
 
             <Select
+              label="Country"
+              selectedKeys={filters.country ? new Set([filters.country]) : new Set()}
+              onSelectionChange={(keys) => {
+                const val = Array.from(keys)[0] as string | undefined;
+                updateFilter("country", val || undefined);
+              }}
+            >
+              {COUNTRIES.map((c) => (
+                <SelectItem key={c.code}>{c.name}</SelectItem>
+              ))}
+            </Select>
+
+            <Select
               label="State"
               selectedKeys={filters.state ? new Set([filters.state]) : new Set()}
               onSelectionChange={(keys) => {
@@ -277,6 +292,20 @@ export function RestaurantFilterControls({
         >
           {US_STATES.map((s) => (
             <SelectItem key={s.code}>{s.name}</SelectItem>
+          ))}
+        </Select>
+
+        <Select
+          placeholder="Country"
+          className="w-44"
+          selectedKeys={filters.country ? new Set([filters.country]) : new Set()}
+          onSelectionChange={(keys) => {
+            const val = Array.from(keys)[0] as string | undefined;
+            updateFilter("country", val || undefined);
+          }}
+        >
+          {COUNTRIES.map((c) => (
+            <SelectItem key={c.code}>{c.name}</SelectItem>
           ))}
         </Select>
 

@@ -81,7 +81,11 @@ export const restaurants = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     address: text("address").notNull(),
-    state: usStateEnum("state").notNull(),
+    // Nullable since worldwide support — state only applies to US restaurants.
+    state: usStateEnum("state"),
+    // ISO 3166-1 alpha-2 country code. Defaults to US so existing rows backfill
+    // cleanly on migration (the app was US-only before this column existed).
+    country: text("country").notNull().default("US"),
     cuisineTypeId: uuid("cuisine_type_id").references(() => cuisineTypes.id, {
       onDelete: "set null",
     }),
@@ -111,6 +115,7 @@ export const restaurants = pgTable(
       .on(table.googlePlaceId)
       .where(sql`${table.deletedAt} IS NULL`),
     index("restaurants_state_idx").on(table.state),
+    index("restaurants_country_idx").on(table.country),
     index("restaurants_cuisine_type_id_idx").on(table.cuisineTypeId),
     index("restaurants_added_by_user_id_idx").on(table.addedByUserId),
     index("restaurants_status_idx").on(table.status),

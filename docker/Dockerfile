@@ -87,18 +87,26 @@ COPY --from=builder --chown=node:node /tmp/playwright-core ./node_modules/playwr
 
 ARG YT_DLP_VERSION=2025.01.15
 
-RUN apk add --no-cache vips libheif ffmpeg python3 \
+# postgresql17-client provides pg_dump/pg_restore (matching the postgres:17 server)
+# for the backup/restore feature; tar (GNU) builds/extracts backup archives;
+# su-exec lets the entrypoint drop from root to the node user after fixing volume perms.
+RUN apk add --no-cache vips libheif ffmpeg python3 postgresql17-client tar su-exec \
     && wget -qO /usr/local/bin/yt-dlp \
        "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/yt-dlp" \
     && chmod +x /usr/local/bin/yt-dlp \
-    && mkdir -p /app/uploads \
-    && chown node:node /app/uploads
+    && mkdir -p /app/uploads /app/backups \
+    && chown node:node /app/uploads /app/backups
 
-USER node
+# entrypoint.sh runs as root to chown the mounted volumes, then drops to the node
+# user. The container therefore starts as root — do NOT set `USER node` here, and
+# remove any `user:` override in docker-compose, or the chown can't run.
+COPY --chmod=755 docker/entrypoint.sh /entrypoint.sh
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+
+ENTRYPOINT ["/entrypoint.sh"]
 
 # migrate.js runs pending DB migrations + seeds cuisine_types on every boot (idempotent).
 # If it exits non-zero, Next.js never starts — the container fails fast with visible logs.

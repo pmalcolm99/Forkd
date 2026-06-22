@@ -29,9 +29,10 @@ yarn-error.log*
 coverage
 .nyc_output
 
-# App data (Docker volumes mapped here in dev)
-uploads/
-backups/
+# App data (Docker volumes mapped here in dev) — anchored to repo root so they
+# don't accidentally match source dirs like apps/web/src/app/api/v1/backups/.
+/uploads/
+/backups/
 
 # OS
 .DS_Store

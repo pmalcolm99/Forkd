@@ -4,7 +4,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     image: ${IMAGE_LOCATION:-ghcr.io/pmalcolm99/forkd:latest}
-    user: "1000:1000"
+    # No `user:` override — the image entrypoint starts as root to fix volume
+    # ownership, then drops to the unprivileged node user (uid 1000) via su-exec.
     restart: always # required for in-app restart feature; Docker re-spawns after process.exit(0)
     ports:
       - "127.0.0.1:${PORT:-3000}:${PORT:-3000}" # bound to localhost only; Cloudflare Tunnel reaches it from here

@@ -273,11 +273,41 @@ The app runs database migrations automatically on boot, so upgrades are safe to 
 
 ## Backups
 
-Forkd has a built-in backup feature: **Admin → Backup**. Clicking **Download backup** produces a `.tar.gz` containing a PostgreSQL dump and all uploaded photos. Store this somewhere safe (external drive, cloud storage).
+Forkd has a full built-in backup system at **Admin → Backup** (owner only).
 
-To restore from a backup, use the **Restore** button on the same page and upload the `.tar.gz`.
+A backup is a single `.tar.gz` containing a `pg_dump` of the database, every uploaded photo, the encrypted `app_config`, and a manifest.
 
-For automated off-server backups, you can also `pg_dump` the database directly:
+- **Back up now** creates a backup on demand. It appears in the list with download/delete buttons.
+- **Scheduled backups** run on a cron expression you set (e.g. `0 3 * * *` for daily at 3 AM). Backups beyond the retention count (default 30, hard cap 10 GB) are pruned automatically.
+- Backups are stored in the `app_backups` Docker volume (`/app/backups`).
+
+> **⚠️ `MASTER_KEY` must match to restore.** The encrypted API keys in a backup can only be decrypted with the same `MASTER_KEY` that created it. Back up your `MASTER_KEY` separately (a password manager) — a database backup alone is not enough.
+
+### Restoring (in-app)
+
+1. **Admin → Backup**. Either click **Restore** next to a listed backup, or upload a `.tar.gz` under **Restore from a file**.
+2. Type `RESTORE` to confirm. Forkd enters maintenance mode (non-owner requests get a "maintenance" message), runs `pg_restore --clean`, replaces the uploads, re-applies config, then exits maintenance mode.
+3. You may need to sign out and back in afterward.
+
+### Restoring (manual, for disaster recovery)
+
+If the app won't start, restore from a terminal:
+
+```bash
+# Extract the archive somewhere on the host
+mkdir restore && tar -xzf forkd-backup-*.tar.gz -C restore
+
+# Restore the database (run from the directory with docker-compose.yml)
+docker compose cp restore/db.dump db:/tmp/db.dump
+docker compose exec db pg_restore --clean --if-exists --no-owner -U forkd -d forkd /tmp/db.dump
+
+# Restore photos into the webapp uploads volume
+docker compose cp restore/uploads/. webapp:/app/uploads/
+
+docker compose restart webapp
+```
+
+For a quick database-only dump without the UI:
 
 ```bash
 docker compose exec db pg_dump -U forkd forkd > forkd_backup_$(date +%Y%m%d).sql

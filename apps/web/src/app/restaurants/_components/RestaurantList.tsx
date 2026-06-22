@@ -21,6 +21,7 @@ import {
   RESTAURANT_STATUS_LABELS,
   formatFamilyAverage,
   formatRelativeTime,
+  getCountryName,
 } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
 import { photoUrl } from "@/lib/photoUrl";
@@ -141,7 +142,9 @@ export function RestaurantList() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{row.name}</p>
                   <p className="truncate text-sm text-gray-500">
-                    {[row.cuisineType?.name, row.state].filter(Boolean).join(" · ")}
+                    {[row.cuisineType?.name, row.state ?? getCountryName(row.country)]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     <Chip color={statusColor.color} className={statusColor.className} size="sm">
@@ -173,7 +176,7 @@ export function RestaurantList() {
             <TableColumn className="w-16"> </TableColumn>
             <TableColumn>Name</TableColumn>
             <TableColumn>Cuisine</TableColumn>
-            <TableColumn>State</TableColumn>
+            <TableColumn>Location</TableColumn>
             <TableColumn>Status</TableColumn>
             <TableColumn>Rating</TableColumn>
             <TableColumn>Google Rating</TableColumn>
@@ -211,7 +214,7 @@ export function RestaurantList() {
                     </Link>
                   </TableCell>
                   <TableCell>{row.cuisineType?.name ?? "—"}</TableCell>
-                  <TableCell>{row.state}</TableCell>
+                  <TableCell>{row.state ?? getCountryName(row.country)}</TableCell>
                   <TableCell>
                     <Chip color={statusColor.color} className={statusColor.className} size="sm">
                       {RESTAURANT_STATUS_LABELS[row.status]}

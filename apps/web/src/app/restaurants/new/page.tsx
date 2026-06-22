@@ -4,16 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Input } from "@heroui/react";
 import type { CreateRestaurantInput } from "@forkd/shared";
-import { usStateEnum } from "@forkd/shared";
+import { countryCodeEnum, usStateEnum } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
 import { RestaurantForm } from "../_components/RestaurantForm";
 
 type Step = "search" | "form";
-
-function extractUSState(address: string): string | null {
-  const m = /\b([A-Z]{2})\s+\d{5}\b/.exec(address) ?? /,\s+([A-Z]{2})(?:,|\s+USA)/.exec(address);
-  return m?.[1] ?? null;
-}
 
 export default function NewRestaurantPage() {
   const router = useRouter();
@@ -129,10 +124,14 @@ export default function NewRestaurantPage() {
               type="button"
               className="rounded-lg border p-3 text-left hover:bg-gray-50 cursor-pointer"
               onClick={() => {
-                const state = usStateEnum.safeParse(extractUSState(result.formattedAddress)).data;
+                // Country/state come straight from Google address components.
+                const country = countryCodeEnum.safeParse(result.countryCode).data ?? "US";
+                const state =
+                  country === "US" ? usStateEnum.safeParse(result.stateCode).data : undefined;
                 setPrefill({
                   name: result.name,
                   address: result.formattedAddress,
+                  country,
                   state,
                   website: result.website ?? undefined,
                   googlePlaceId: result.placeId,

@@ -89,14 +89,20 @@ async function processImport(data: ImportJobData): Promise<void> {
     }
 
     // ── Create draft restaurant ───────────────────────────────────────────────
-    const address = confirmed?.formattedAddress ?? (extracted.address || `${extracted.state}, USA`);
+    // Prefer Google-confirmed region; fall back to the AI extraction.
+    const country = confirmed?.countryCode ?? extracted.country ?? "US";
+    const state = confirmed?.stateCode ?? (country === "US" ? (extracted.state ?? null) : null);
+    const address =
+      confirmed?.formattedAddress ??
+      (extracted.address || [state, country].filter(Boolean).join(", "));
 
     const [newRestaurant] = await db
       .insert(restaurants)
       .values({
         name: confirmed?.name ?? extracted.name,
         address,
-        state: extracted.state as (typeof restaurants.$inferInsert)["state"],
+        state: state as (typeof restaurants.$inferInsert)["state"],
+        country,
         description: extracted.description || null,
         status: "want_to_try",
         socialUrl: sourceUrl,
@@ -193,3 +199,7 @@ export function startImportWorker(): void {
   logger.info("Import worker started");
   void checkChromeReachability();
 }
+
+// Backup/restore worker lives here too so instrumentation.ts can start everything
+// from the single "@forkd/queue/worker" entrypoint.
+export { startBackupWorker } from "./backupWorker";

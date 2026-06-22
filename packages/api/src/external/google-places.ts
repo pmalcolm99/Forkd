@@ -13,6 +13,10 @@ export type SearchResult = {
   ratingsTotal: number | null;
   website: string | null;
   photoNames: string[];
+  // ISO 3166-1 alpha-2 country code (e.g. "US", "JP") parsed from address components.
+  countryCode: string | null;
+  // 2-letter US state code parsed from administrative_area_level_1 (US only).
+  stateCode: string | null;
 };
 
 export type SearchPlacesResult =
@@ -32,6 +36,12 @@ export type GetPlaceRatingResult =
   | { status: "not_configured" }
   | { status: "failed"; error: string };
 
+const addressComponentSchema = z.object({
+  longText: z.string(),
+  shortText: z.string(),
+  types: z.array(z.string()),
+});
+
 const placeSchema = z.object({
   id: z.string(),
   displayName: z.object({ text: z.string() }),
@@ -41,7 +51,22 @@ const placeSchema = z.object({
   userRatingCount: z.number().int().optional(),
   websiteUri: z.string().optional(),
   photos: z.array(z.object({ name: z.string() })).optional(),
+  addressComponents: z.array(addressComponentSchema).optional(),
 });
+
+/** Pull the ISO country code and (US) state code out of Google address components. */
+function parseRegion(components: z.infer<typeof addressComponentSchema>[] | undefined): {
+  countryCode: string | null;
+  stateCode: string | null;
+} {
+  if (!components) return { countryCode: null, stateCode: null };
+  const country = components.find((c) => c.types.includes("country"));
+  const admin1 = components.find((c) => c.types.includes("administrative_area_level_1"));
+  const countryCode = country?.shortText ?? null;
+  // administrative_area_level_1 shortText is the 2-letter state code for the US.
+  const stateCode = countryCode === "US" ? (admin1?.shortText ?? null) : null;
+  return { countryCode, stateCode };
+}
 
 const searchResponseSchema = z.object({
   places: z.array(placeSchema).optional().default([]),
@@ -82,7 +107,7 @@ export async function searchPlaces(
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask":
-          "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.websiteUri,places.photos",
+          "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.websiteUri,places.photos,places.addressComponents",
       },
       body: JSON.stringify({
         textQuery: query,
@@ -113,17 +138,22 @@ export async function searchPlaces(
       return { status: "failed", error: "Could not parse response" };
     }
 
-    const results: SearchResult[] = parsed.data.places.map((p) => ({
-      placeId: p.id,
-      name: p.displayName.text,
-      formattedAddress: p.formattedAddress,
-      latitude: p.location.latitude,
-      longitude: p.location.longitude,
-      rating: p.rating ?? null,
-      ratingsTotal: p.userRatingCount ?? null,
-      website: p.websiteUri ?? null,
-      photoNames: (p.photos ?? []).slice(0, 5).map((ph) => ph.name),
-    }));
+    const results: SearchResult[] = parsed.data.places.map((p) => {
+      const { countryCode, stateCode } = parseRegion(p.addressComponents);
+      return {
+        placeId: p.id,
+        name: p.displayName.text,
+        formattedAddress: p.formattedAddress,
+        latitude: p.location.latitude,
+        longitude: p.location.longitude,
+        rating: p.rating ?? null,
+        ratingsTotal: p.userRatingCount ?? null,
+        website: p.websiteUri ?? null,
+        photoNames: (p.photos ?? []).slice(0, 5).map((ph) => ph.name),
+        countryCode,
+        stateCode,
+      };
+    });
 
     return { status: "success", results };
   } catch (err) {

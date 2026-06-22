@@ -2,7 +2,19 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { eq } from "drizzle-orm";
 import { auth } from "@forkd/auth";
-import { db, user as userTable } from "@forkd/db";
+import { db, user as userTable, getDecryptedConfigValue } from "@forkd/db";
+
+// Maintenance mode (set during a restore) blocks non-owner requests. Cached briefly
+// so the check doesn't add a DB round-trip to every authenticated request.
+let maintenanceCache: { value: boolean; at: number } | null = null;
+async function isMaintenanceMode(): Promise<boolean> {
+  const now = Date.now();
+  if (maintenanceCache && now - maintenanceCache.at < 5000) return maintenanceCache.value;
+  const raw = await getDecryptedConfigValue("maintenance_mode", db).catch(() => null);
+  const on = raw === "true";
+  maintenanceCache = { value: on, at: now };
+  return on;
+}
 
 export const createTRPCContext = async ({
   req,
@@ -40,9 +52,16 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
 
 export const publicProcedure = t.procedure;
 
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  // During a restore, only the owner may act; everyone else gets a clear message.
+  if (!ctx.user.isOwner && (await isMaintenanceMode())) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: "Forkd is in maintenance mode (a restore is in progress). Please try again shortly.",
+    });
   }
   // Fire-and-forget: update lastActiveAt at most once per 5 min per user.
   const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);

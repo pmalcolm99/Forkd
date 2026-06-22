@@ -43,6 +43,7 @@ export const restaurantsRouter = router({
     const filters = [isNull(restaurants.deletedAt)];
     if (input.status?.length) filters.push(inArray(restaurants.status, input.status));
     if (input.state) filters.push(eq(restaurants.state, input.state));
+    if (input.country) filters.push(eq(restaurants.country, input.country));
     if (input.cuisineTypeId) filters.push(eq(restaurants.cuisineTypeId, input.cuisineTypeId));
     if (input.addedByUserId) filters.push(eq(restaurants.addedByUserId, input.addedByUserId));
     if (input.search) {

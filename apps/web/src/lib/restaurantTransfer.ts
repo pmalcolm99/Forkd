@@ -21,7 +21,11 @@ const transferRestaurantSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   address: z.string(),
-  state: usStateEnum,
+  // Optional + nullable so OLD exports (which always had a state) and worldwide
+  // restaurants (no state) both import cleanly.
+  state: usStateEnum.nullish(),
+  // Added with worldwide support. Absent in pre-1.x exports → defaults to "US" on import.
+  country: z.string().length(2).optional(),
   cuisineTypeName: z.string().nullable(),
   description: z.string().nullable(),
   website: z.string().nullable(),
@@ -71,6 +75,7 @@ export async function buildExportDocument(): Promise<TransferDocument> {
       name: r.name,
       address: r.address,
       state: r.state,
+      country: r.country,
       cuisineTypeName: r.cuisineType?.name ?? null,
       description: r.description,
       website: r.website,
@@ -201,7 +206,8 @@ export async function importRestaurants(tx: Tx, doc: TransferDocument): Promise<
       id: newId,
       name: r.name,
       address: r.address,
-      state: r.state,
+      state: r.state ?? null,
+      country: r.country ?? "US",
       cuisineTypeId,
       description: r.description,
       website: r.website,

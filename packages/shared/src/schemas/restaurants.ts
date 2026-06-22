@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { countryCodeEnum } from "../countries";
 
 export const restaurantStatusEnum = z.enum([
   "want_to_try",
@@ -64,10 +65,14 @@ export const usStateEnum = z.enum([
 ]);
 export type USStateCode = z.infer<typeof usStateEnum>;
 
-export const createRestaurantInput = z.object({
+// Plain base object (no refinement) so updateRestaurantInput can call .partial().
+const createRestaurantBase = z.object({
   name: z.string().min(1).max(200),
   address: z.string().min(1).max(500),
-  state: usStateEnum,
+  // State is US-only and optional at the type level; the refine below requires it
+  // when country is US so the state filter stays meaningful for US restaurants.
+  state: usStateEnum.nullable().optional(),
+  country: countryCodeEnum.default("US"),
   cuisineTypeId: z.string().uuid().nullable().optional(),
   description: z.string().max(2000).nullable().optional(),
   website: z.string().url().nullable().optional(),
@@ -77,16 +82,27 @@ export const createRestaurantInput = z.object({
   latitude: z.number().nullable().optional(),
   longitude: z.number().nullable().optional(),
 });
+
+export const createRestaurantInput = createRestaurantBase.superRefine((val, ctx) => {
+  if (val.country === "US" && !val.state) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "State is required for US restaurants",
+      path: ["state"],
+    });
+  }
+});
 export type CreateRestaurantInput = z.infer<typeof createRestaurantInput>;
 
 export const updateRestaurantInput = z
   .object({ id: z.string().uuid() })
-  .merge(createRestaurantInput.partial());
+  .merge(createRestaurantBase.partial());
 export type UpdateRestaurantInput = z.infer<typeof updateRestaurantInput>;
 
 export const listRestaurantsInput = z.object({
   status: z.array(restaurantStatusEnum).optional(),
   state: usStateEnum.optional(),
+  country: countryCodeEnum.optional(),
   cuisineTypeId: z.string().uuid().optional(),
   addedByUserId: z.string().optional(), // text, not uuid — matches users.id
   search: z.string().optional(),
@@ -101,7 +117,8 @@ export type ListRestaurantsInput = z.infer<typeof listRestaurantsInput>;
 export function restaurantRowToInput(row: {
   name: string;
   address: string;
-  state: USStateCode;
+  state: USStateCode | null;
+  country: string;
   cuisineTypeId: string | null;
   description: string | null;
   website: string | null;
@@ -111,6 +128,7 @@ export function restaurantRowToInput(row: {
     name: row.name,
     address: row.address,
     state: row.state,
+    country: row.country,
     cuisineTypeId: row.cuisineTypeId ?? undefined,
     description: row.description ?? undefined,
     website: row.website ?? undefined,

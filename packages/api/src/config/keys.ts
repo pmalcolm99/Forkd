@@ -61,6 +61,30 @@ export const CONFIG_KEYS = [
       return Number.isInteger(n) && n >= 1 && n <= 500;
     }, "Must be a whole number between 1 and 500"),
   },
+  {
+    // Cron expression for scheduled backups. Empty string disables scheduling.
+    key: "backup.schedule_cron",
+    isSecret: false,
+    requiredRole: "owner",
+    valueType: "string",
+    defaultValue: "",
+  },
+  {
+    // Number of backups to keep; older ones are pruned after each new backup.
+    key: "backup.retention_count",
+    isSecret: false,
+    requiredRole: "owner",
+    valueType: "string",
+    defaultValue: "30",
+  },
+  {
+    // "true" while a restore is in progress — gates non-owner requests.
+    key: "maintenance_mode",
+    isSecret: false,
+    requiredRole: "owner",
+    valueType: "string",
+    defaultValue: "false",
+  },
 ] as const satisfies ConfigKeyDef[];
 
 export const CONFIG_KEY_MAP = new Map<string, ConfigKeyDef>(

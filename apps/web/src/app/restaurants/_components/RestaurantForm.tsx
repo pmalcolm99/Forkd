@@ -3,7 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Input, Select, SelectItem, Textarea, Tooltip } from "@heroui/react";
 import type { CreateRestaurantInput } from "@forkd/shared";
-import { RESTAURANT_STATUS_LABELS, US_STATES, createRestaurantInput } from "@forkd/shared";
+import {
+  COUNTRIES,
+  RESTAURANT_STATUS_LABELS,
+  US_STATES,
+  createRestaurantInput,
+} from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
 import { useZodForm } from "@/lib/useZodForm";
 
@@ -81,20 +86,40 @@ export function RestaurantForm({
       />
 
       <Select
-        label="State"
+        label="Country"
         isRequired
-        selectedKeys={values.state ? new Set([values.state]) : new Set()}
+        selectedKeys={new Set([values.country ?? "US"])}
         onSelectionChange={(keys) => {
           const val = Array.from(keys)[0] as string;
-          setField("state", val as CreateRestaurantInput["state"]);
+          setField("country", val as CreateRestaurantInput["country"]);
+          // State only applies to the US — clear it when switching away.
+          if (val !== "US") setField("state", null);
         }}
-        isInvalid={!!errors.state}
-        errorMessage={errors.state}
+        isInvalid={!!errors.country}
+        errorMessage={errors.country}
       >
-        {US_STATES.map((s) => (
-          <SelectItem key={s.code}>{s.name}</SelectItem>
+        {COUNTRIES.map((c) => (
+          <SelectItem key={c.code}>{c.name}</SelectItem>
         ))}
       </Select>
+
+      {(values.country ?? "US") === "US" && (
+        <Select
+          label="State"
+          isRequired
+          selectedKeys={values.state ? new Set([values.state]) : new Set()}
+          onSelectionChange={(keys) => {
+            const val = Array.from(keys)[0] as string;
+            setField("state", val as CreateRestaurantInput["state"]);
+          }}
+          isInvalid={!!errors.state}
+          errorMessage={errors.state}
+        >
+          {US_STATES.map((s) => (
+            <SelectItem key={s.code}>{s.name}</SelectItem>
+          ))}
+        </Select>
+      )}
 
       <Select
         label="Cuisine type"
