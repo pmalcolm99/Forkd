@@ -34,6 +34,9 @@ coverage
 /uploads/
 /backups/
 
+# Personal scratch / brainstorm files (not for the public repo)
+IDEAS.md
+
 # OS
 .DS_Store
 Thumbs.db

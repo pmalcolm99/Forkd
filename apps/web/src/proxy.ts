@@ -43,8 +43,10 @@ export const config = {
   matcher: [
     // Protect all routes except:
     //   _next/  — all Next.js internals (static, image, HMR, etc.)
-    //   favicon.ico, manifest.json, robots.txt — public files needed without auth
+    //   favicon.ico, manifest(.json|.webmanifest), robots.txt — public metadata
+    //   sw.js, offline.html, icon*.png / apple-icon*.png — PWA assets the browser
+    //     must fetch without an app session (install, icon, offline shell)
     //   api/v1/health — Docker healthcheck (responds to both GET and HEAD)
-    "/((?!_next/|favicon\\.ico|manifest\\.json|robots\\.txt|api/v1/health).*)",
+    "/((?!_next/|favicon\\.ico|manifest\\.(?:json|webmanifest)|robots\\.txt|sw\\.js|offline\\.html|(?:apple-)?icon[\\w-]*\\.png|api/v1/health).*)",
   ],
 };

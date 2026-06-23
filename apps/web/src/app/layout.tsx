@@ -4,6 +4,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { serverTrpc } from "@/lib/trpc/server";
 import { Header } from "@/components/Header";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export const metadata: Metadata = {
   title: "Forkd",
@@ -58,6 +60,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <Header userName={userName} isAdmin={isAdmin} isDev={isDev} />
         <Providers>{children}</Providers>
+        <ServiceWorkerRegister />
+        <InstallPrompt />
       </body>
     </html>
   );
