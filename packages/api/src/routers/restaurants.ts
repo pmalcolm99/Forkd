@@ -44,6 +44,7 @@ export const restaurantsRouter = router({
     if (input.status?.length) filters.push(inArray(restaurants.status, input.status));
     if (input.state) filters.push(eq(restaurants.state, input.state));
     if (input.country) filters.push(eq(restaurants.country, input.country));
+    if (input.priceLevel) filters.push(eq(restaurants.googlePriceLevel, input.priceLevel));
     if (input.cuisineTypeId) filters.push(eq(restaurants.cuisineTypeId, input.cuisineTypeId));
     if (input.addedByUserId) filters.push(eq(restaurants.addedByUserId, input.addedByUserId));
     if (input.search) {
@@ -210,7 +211,11 @@ export const restaurantsRouter = router({
         if (details.status === "success") {
           await ctx.db
             .update(restaurants)
-            .set({ googleRatingsTotal: details.ratingsTotal })
+            .set({
+              googleRatingsTotal: details.ratingsTotal,
+              googlePriceLevel: details.priceLevel,
+              googleOpeningHours: details.openingHours,
+            })
             .where(eq(restaurants.id, row.id));
           await fetchGooglePhotosIfNeeded(details.photoNames, apiKey, row.id, ctx.db);
         }
@@ -320,6 +325,8 @@ export const restaurantsRouter = router({
             googleRating: top.rating !== null ? String(top.rating) : null,
             googleRatingsTotal: top.ratingsTotal,
             googleRatingFetchedAt: new Date(),
+            googlePriceLevel: top.priceLevel,
+            googleOpeningHours: top.openingHours,
             latitude: String(top.latitude),
             longitude: String(top.longitude),
             updatedAt: new Date(),
@@ -354,6 +361,8 @@ export const restaurantsRouter = router({
           googleRating: result.rating !== null ? String(result.rating) : null,
           googleRatingsTotal: result.ratingsTotal,
           googleRatingFetchedAt: new Date(),
+          googlePriceLevel: result.priceLevel,
+          googleOpeningHours: result.openingHours,
           ...(result.latitude !== null && result.longitude !== null
             ? { latitude: String(result.latitude), longitude: String(result.longitude) }
             : {}),

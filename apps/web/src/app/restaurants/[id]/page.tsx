@@ -6,7 +6,10 @@ import {
   RESTAURANT_STATUS_COLORS,
   RESTAURANT_STATUS_LABELS,
   formatRelativeTime,
+  formatPriceLevel,
   getCountryName,
+  getTodayHours,
+  type OpeningHours,
 } from "@forkd/shared";
 import { serverTrpc } from "@/lib/trpc/server";
 import { DeleteRestaurantButton } from "./_components/DeleteRestaurantButton";
@@ -57,6 +60,8 @@ export default async function RestaurantDetailPage({ params }: Props) {
     : row.reviews;
 
   const statusColor = RESTAURANT_STATUS_COLORS[row.status];
+  const priceLabel = formatPriceLevel(row.googlePriceLevel);
+  const todayHours = getTodayHours(row.googleOpeningHours as OpeningHours | null);
   const addedBy = row.addedBy
     ? [row.addedBy.firstName, row.addedBy.lastName].filter(Boolean).join(" ")
     : null;
@@ -76,6 +81,11 @@ export default async function RestaurantDetailPage({ params }: Props) {
         <Chip color={statusColor.color} className={statusColor.className}>
           {RESTAURANT_STATUS_LABELS[row.status]}
         </Chip>
+        {priceLabel && (
+          <Chip variant="flat" color="success">
+            {priceLabel}
+          </Chip>
+        )}
         <RatingDisplay average={row.familyAverage} count={row.reviewCount} />
       </div>
 
@@ -153,6 +163,20 @@ export default async function RestaurantDetailPage({ params }: Props) {
               </span>
             )}
           </dd>
+
+          {todayHours.todayLabel && (
+            <>
+              <dt className="font-medium text-default-500">Hours today</dt>
+              <dd className="flex flex-wrap items-center gap-2">
+                <span>{todayHours.todayLabel}</span>
+                {todayHours.openNow !== null && (
+                  <Chip size="sm" variant="flat" color={todayHours.openNow ? "success" : "default"}>
+                    {todayHours.openNow ? "Open now" : "Closed"}
+                  </Chip>
+                )}
+              </dd>
+            </>
+          )}
         </dl>
       </div>
 

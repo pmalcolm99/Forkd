@@ -14,5 +14,13 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icon-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
+    // Share Target: lets the installed PWA appear in the OS share sheet so a shared
+    // TikTok/IG/YouTube link opens /import and starts a social import. (Android/Chrome;
+    // iOS Safari doesn't support Web Share Target.)
+    share_target: {
+      action: "/import",
+      method: "GET",
+      params: { title: "title", text: "text", url: "url" },
+    },
   };
 }

@@ -6,4 +6,5 @@ export * from "./photos";
 export * from "./imports";
 export * from "./config";
 export * from "./backups";
+export * from "./apiUsage";
 export * from "./relations";

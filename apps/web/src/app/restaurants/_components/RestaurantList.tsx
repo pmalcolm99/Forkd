@@ -20,6 +20,7 @@ import {
   RESTAURANT_STATUS_COLORS,
   RESTAURANT_STATUS_LABELS,
   formatFamilyAverage,
+  formatPriceLevel,
   formatRelativeTime,
   getCountryName,
 } from "@forkd/shared";
@@ -27,6 +28,7 @@ import { trpc } from "@/lib/trpc/client";
 import { photoUrl } from "@/lib/photoUrl";
 import { useRestaurantFilters } from "@/lib/useRestaurantFilters";
 import { RestaurantFilterControls } from "@/components/RestaurantFilterControls";
+import { OnboardingCard } from "@/components/OnboardingCard";
 
 export function RestaurantList() {
   const { filters, updateFilter, resetFilters } = useRestaurantFilters();
@@ -47,8 +49,60 @@ export function RestaurantList() {
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / filters.pageSize)) : 1;
 
+  const hasActiveFilters =
+    !!searchValue ||
+    filters.status !== undefined ||
+    filters.state !== undefined ||
+    filters.country !== undefined ||
+    filters.priceLevel !== undefined ||
+    filters.cuisineTypeId !== undefined ||
+    filters.addedByUserId !== undefined;
+
+  const emptyState = hasActiveFilters ? (
+    <div className="py-10 text-center">
+      <p className="text-default-500">No restaurants match your filters.</p>
+      <Button
+        className="mt-3"
+        size="sm"
+        variant="flat"
+        onPress={() => {
+          resetFilters();
+          setSearchValue("");
+        }}
+      >
+        Reset filters
+      </Button>
+    </div>
+  ) : (
+    <div className="flex flex-col items-center gap-3 py-12 text-center">
+      <Utensils className="h-10 w-10 text-default-300" />
+      <p className="text-lg font-medium">No restaurants yet</p>
+      <p className="max-w-sm text-sm text-default-500">
+        Add your first place or import one from a TikTok, Instagram, or YouTube post.
+      </p>
+      <div className="flex flex-wrap justify-center gap-2">
+        <Button
+          as={Link}
+          href="/restaurants/new"
+          color="primary"
+          startContent={<Plus className="h-4 w-4" />}
+        >
+          Add restaurant
+        </Button>
+        <Button
+          variant="flat"
+          startContent={<Upload className="h-4 w-4" />}
+          onPress={() => setImportOpen(true)}
+        >
+          Import from social
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <main className="mx-auto max-w-7xl p-6">
+      <OnboardingCard />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Restaurants</h1>
         <div className="flex gap-2">
@@ -115,9 +169,7 @@ export function RestaurantList() {
             <Spinner />
           </div>
         )}
-        {!isLoading && (data?.items ?? []).length === 0 && (
-          <p className="py-8 text-center text-default-400">No restaurants found.</p>
-        )}
+        {!isLoading && (data?.items ?? []).length === 0 && emptyState}
         <div className="flex flex-col gap-3">
           {(data?.items ?? []).map((row) => {
             const statusColor = RESTAURANT_STATUS_COLORS[row.status];
@@ -150,6 +202,11 @@ export function RestaurantList() {
                     <Chip color={statusColor.color} className={statusColor.className} size="sm">
                       {RESTAURANT_STATUS_LABELS[row.status]}
                     </Chip>
+                    {formatPriceLevel(row.googlePriceLevel) && (
+                      <Chip size="sm" variant="flat" color="success">
+                        {formatPriceLevel(row.googlePriceLevel)}
+                      </Chip>
+                    )}
                     <Chip size="sm" variant="flat" color="secondary">
                       Family: {ratingDisplay}
                     </Chip>
@@ -183,11 +240,7 @@ export function RestaurantList() {
             <TableColumn>Added by</TableColumn>
             <TableColumn>Added</TableColumn>
           </TableHeader>
-          <TableBody
-            isLoading={isLoading}
-            loadingContent={<Spinner />}
-            emptyContent={<span className="text-default-400">No restaurants found.</span>}
-          >
+          <TableBody isLoading={isLoading} loadingContent={<Spinner />} emptyContent={emptyState}>
             {(data?.items ?? []).map((row) => {
               const statusColor = RESTAURANT_STATUS_COLORS[row.status];
               const addedBy = row.addedBy
@@ -216,9 +269,16 @@ export function RestaurantList() {
                   <TableCell>{row.cuisineType?.name ?? "—"}</TableCell>
                   <TableCell>{row.state ?? getCountryName(row.country)}</TableCell>
                   <TableCell>
-                    <Chip color={statusColor.color} className={statusColor.className} size="sm">
-                      {RESTAURANT_STATUS_LABELS[row.status]}
-                    </Chip>
+                    <div className="flex items-center gap-1">
+                      <Chip color={statusColor.color} className={statusColor.className} size="sm">
+                        {RESTAURANT_STATUS_LABELS[row.status]}
+                      </Chip>
+                      {formatPriceLevel(row.googlePriceLevel) && (
+                        <Chip size="sm" variant="flat" color="success">
+                          {formatPriceLevel(row.googlePriceLevel)}
+                        </Chip>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Chip size="sm" variant="flat" color="default">

@@ -6,6 +6,7 @@ export function parseRestaurantFilters(params: URLSearchParams): ListRestaurants
     status: rawStatus.length ? rawStatus : undefined,
     state: params.get("state") ?? undefined,
     country: params.get("country") ?? undefined,
+    priceLevel: params.get("priceLevel") ?? undefined,
     cuisineTypeId: params.get("cuisineTypeId") ?? undefined,
     addedByUserId: params.get("addedByUserId") ?? undefined,
     search: params.get("search") ?? undefined,

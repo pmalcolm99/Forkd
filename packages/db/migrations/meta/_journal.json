@@ -64,6 +64,13 @@
       "when": 1782134396555,
       "tag": "0008_busy_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782182773848,
+      "tag": "0009_greedy_deathbird",
+      "breakpoints": true
     }
   ]
 }

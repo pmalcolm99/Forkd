@@ -27,7 +27,9 @@ export function useRestaurantFilters(): {
 
   function resetFilters() {
     const next = new URLSearchParams(window.location.search);
-    ["status", "state", "country", "cuisineTypeId", "addedByUserId"].forEach((k) => next.delete(k));
+    ["status", "state", "country", "priceLevel", "cuisineTypeId", "addedByUserId"].forEach((k) =>
+      next.delete(k)
+    );
     next.set("page", "1");
     router.replace(`?${next.toString()}`);
   }

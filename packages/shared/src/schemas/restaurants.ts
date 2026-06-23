@@ -103,6 +103,7 @@ export const listRestaurantsInput = z.object({
   status: z.array(restaurantStatusEnum).optional(),
   state: usStateEnum.optional(),
   country: countryCodeEnum.optional(),
+  priceLevel: z.coerce.number().int().min(1).max(4).optional(),
   cuisineTypeId: z.string().uuid().optional(),
   addedByUserId: z.string().optional(), // text, not uuid — matches users.id
   search: z.string().optional(),

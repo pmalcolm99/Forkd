@@ -2,7 +2,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@forkd/shared", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  parseGooglePriceLevel: (raw: string | null | undefined) => {
+    const m: Record<string, number> = {
+      PRICE_LEVEL_INEXPENSIVE: 1,
+      PRICE_LEVEL_MODERATE: 2,
+      PRICE_LEVEL_EXPENSIVE: 3,
+      PRICE_LEVEL_VERY_EXPENSIVE: 4,
+    };
+    return raw ? (m[raw] ?? null) : null;
+  },
 }));
+
+// recordApiUsage is fire-and-forget; stub it so the test db ({} as never) isn't touched.
+vi.mock("@forkd/db", () => ({ recordApiUsage: () => Promise.resolve() }));
 
 const mockGetDecryptedConfigValue = vi.fn();
 vi.mock("../config/read", () => ({
@@ -115,6 +127,8 @@ describe("getPlaceRating", () => {
       longitude: null,
       photoNames: [],
       ratingsTotal: null,
+      priceLevel: null,
+      openingHours: null,
     });
   });
 
@@ -130,6 +144,8 @@ describe("getPlaceRating", () => {
       longitude: null,
       photoNames: [],
       ratingsTotal: null,
+      priceLevel: null,
+      openingHours: null,
     });
   });
 
@@ -151,6 +167,8 @@ describe("getPlaceRating", () => {
       longitude: -105.09,
       photoNames: [],
       ratingsTotal: null,
+      priceLevel: null,
+      openingHours: null,
     });
   });
 

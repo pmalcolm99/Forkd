@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { db as dbType } from "@forkd/db";
-import { getDecryptedConfigValue } from "@forkd/db";
-import { logger } from "@forkd/shared";
+import { getDecryptedConfigValue, recordApiUsage } from "@forkd/db";
+import { logger, parseGooglePriceLevel, type OpeningHours } from "@forkd/shared";
 
 export type ConfirmedPlace = {
   placeId: string;
@@ -13,12 +13,26 @@ export type ConfirmedPlace = {
   photoName: string | null;
   countryCode: string | null;
   stateCode: string | null;
+  priceLevel: number | null;
+  openingHours: OpeningHours | null;
 };
 
 const addressComponentSchema = z.object({
   shortText: z.string(),
   longText: z.string(),
   types: z.array(z.string()),
+});
+
+const openingHoursPointSchema = z.object({
+  day: z.number().int(),
+  hour: z.number().int(),
+  minute: z.number().int(),
+});
+const regularOpeningHoursSchema = z.object({
+  periods: z
+    .array(z.object({ open: openingHoursPointSchema, close: openingHoursPointSchema.optional() }))
+    .optional(),
+  weekdayDescriptions: z.array(z.string()).optional(),
 });
 
 const placeSchema = z.object({
@@ -29,11 +43,25 @@ const placeSchema = z.object({
   rating: z.number().optional(),
   photos: z.array(z.object({ name: z.string() })).optional(),
   addressComponents: z.array(addressComponentSchema).optional(),
+  priceLevel: z.string().optional(),
+  regularOpeningHours: regularOpeningHoursSchema.optional(),
+  utcOffsetMinutes: z.number().int().optional(),
 });
 
 const searchResponseSchema = z.object({
   places: z.array(placeSchema).optional().default([]),
 });
+
+function buildOpeningHours(
+  reg: z.infer<typeof regularOpeningHoursSchema> | undefined,
+  utcOffsetMinutes: number | undefined
+): OpeningHours | null {
+  const oh: OpeningHours = {};
+  if (reg?.weekdayDescriptions) oh.weekdayDescriptions = reg.weekdayDescriptions;
+  if (reg?.periods) oh.periods = reg.periods;
+  if (typeof utcOffsetMinutes === "number") oh.utcOffsetMinutes = utcOffsetMinutes;
+  return Object.keys(oh).length > 0 ? oh : null;
+}
 
 const TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 const TIMEOUT_MS = 10_000;
@@ -55,12 +83,13 @@ export async function confirmWithGooglePlaces(
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask":
-          "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.photos,places.addressComponents",
+          "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.photos,places.addressComponents,places.priceLevel,places.regularOpeningHours,places.utcOffsetMinutes",
       },
       body: JSON.stringify({ textQuery: query, maxResultCount: 1 }),
       signal: ac.signal,
     });
     clearTimeout(timer);
+    void recordApiUsage(db, "search").catch(() => {});
 
     if (!resp.ok) {
       logger.warn(
@@ -90,6 +119,8 @@ export async function confirmWithGooglePlaces(
       photoName: p.photos?.[0]?.name ?? null,
       countryCode,
       stateCode: countryCode === "US" ? (admin1?.shortText ?? null) : null,
+      priceLevel: parseGooglePriceLevel(p.priceLevel),
+      openingHours: buildOpeningHours(p.regularOpeningHours, p.utcOffsetMinutes),
     };
   } catch (err) {
     clearTimeout(timer);

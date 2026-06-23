@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { db as dbType } from "@forkd/db";
-import { logger } from "@forkd/shared";
+import { recordApiUsage } from "@forkd/db";
+import { logger, parseGooglePriceLevel, type OpeningHours } from "@forkd/shared";
 import { getDecryptedConfigValue } from "../config/read";
 
 export type SearchResult = {
@@ -17,6 +18,8 @@ export type SearchResult = {
   countryCode: string | null;
   // 2-letter US state code parsed from administrative_area_level_1 (US only).
   stateCode: string | null;
+  priceLevel: number | null;
+  openingHours: OpeningHours | null;
 };
 
 export type SearchPlacesResult =
@@ -32,6 +35,8 @@ export type GetPlaceRatingResult =
       latitude: number | null;
       longitude: number | null;
       photoNames: string[];
+      priceLevel: number | null;
+      openingHours: OpeningHours | null;
     }
   | { status: "not_configured" }
   | { status: "failed"; error: string };
@@ -41,6 +46,30 @@ const addressComponentSchema = z.object({
   shortText: z.string(),
   types: z.array(z.string()),
 });
+
+const openingHoursPointSchema = z.object({
+  day: z.number().int(),
+  hour: z.number().int(),
+  minute: z.number().int(),
+});
+const regularOpeningHoursSchema = z.object({
+  periods: z
+    .array(z.object({ open: openingHoursPointSchema, close: openingHoursPointSchema.optional() }))
+    .optional(),
+  weekdayDescriptions: z.array(z.string()).optional(),
+});
+
+/** Merge Google's regularOpeningHours + utcOffsetMinutes into our stored shape. */
+function buildOpeningHours(
+  reg: z.infer<typeof regularOpeningHoursSchema> | undefined,
+  utcOffsetMinutes: number | undefined
+): OpeningHours | null {
+  const oh: OpeningHours = {};
+  if (reg?.weekdayDescriptions) oh.weekdayDescriptions = reg.weekdayDescriptions;
+  if (reg?.periods) oh.periods = reg.periods;
+  if (typeof utcOffsetMinutes === "number") oh.utcOffsetMinutes = utcOffsetMinutes;
+  return Object.keys(oh).length > 0 ? oh : null;
+}
 
 const placeSchema = z.object({
   id: z.string(),
@@ -52,6 +81,9 @@ const placeSchema = z.object({
   websiteUri: z.string().optional(),
   photos: z.array(z.object({ name: z.string() })).optional(),
   addressComponents: z.array(addressComponentSchema).optional(),
+  priceLevel: z.string().optional(),
+  regularOpeningHours: regularOpeningHoursSchema.optional(),
+  utcOffsetMinutes: z.number().int().optional(),
 });
 
 /** Pull the ISO country code and (US) state code out of Google address components. */
@@ -78,6 +110,9 @@ const ratingResponseSchema = z.object({
   userRatingCount: z.number().int().optional(),
   location: z.object({ latitude: z.number(), longitude: z.number() }).optional(),
   photos: z.array(z.object({ name: z.string() })).optional(),
+  priceLevel: z.string().optional(),
+  regularOpeningHours: regularOpeningHoursSchema.optional(),
+  utcOffsetMinutes: z.number().int().optional(),
 });
 
 const TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
@@ -107,7 +142,7 @@ export async function searchPlaces(
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
         "X-Goog-FieldMask":
-          "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.websiteUri,places.photos,places.addressComponents",
+          "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.userRatingCount,places.websiteUri,places.photos,places.addressComponents,places.priceLevel,places.regularOpeningHours,places.utcOffsetMinutes",
       },
       body: JSON.stringify({
         textQuery: query,
@@ -119,6 +154,7 @@ export async function searchPlaces(
       signal: ac.signal,
     });
     clearTimeout(timer);
+    void recordApiUsage(db, "search").catch(() => {});
 
     if (!resp.ok) {
       logger.warn(
@@ -152,6 +188,8 @@ export async function searchPlaces(
         photoNames: (p.photos ?? []).slice(0, 5).map((ph) => ph.name),
         countryCode,
         stateCode,
+        priceLevel: parseGooglePriceLevel(p.priceLevel),
+        openingHours: buildOpeningHours(p.regularOpeningHours, p.utcOffsetMinutes),
       };
     });
 
@@ -182,11 +220,13 @@ export async function getPlaceRating(
       headers: {
         "X-Goog-Api-Key": apiKey,
         // Place Details field mask has NO "places." prefix (unlike text search)
-        "X-Goog-FieldMask": "id,rating,userRatingCount,location,photos",
+        "X-Goog-FieldMask":
+          "id,rating,userRatingCount,location,photos,priceLevel,regularOpeningHours,utcOffsetMinutes",
       },
       signal: ac.signal,
     });
     clearTimeout(timer);
+    void recordApiUsage(db, "details").catch(() => {});
 
     if (!resp.ok) {
       logger.warn(
@@ -213,6 +253,11 @@ export async function getPlaceRating(
       latitude: parsed.data.location?.latitude ?? null,
       longitude: parsed.data.location?.longitude ?? null,
       photoNames: (parsed.data.photos ?? []).slice(0, 5).map((ph) => ph.name),
+      priceLevel: parseGooglePriceLevel(parsed.data.priceLevel),
+      openingHours: buildOpeningHours(
+        parsed.data.regularOpeningHours,
+        parsed.data.utcOffsetMinutes
+      ),
     };
   } catch (err) {
     clearTimeout(timer);

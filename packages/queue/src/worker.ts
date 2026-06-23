@@ -110,6 +110,8 @@ async function processImport(data: ImportJobData): Promise<void> {
         googlePlaceId: confirmed?.placeId ?? null,
         googleRating: confirmed?.rating != null ? String(confirmed.rating) : null,
         googleRatingFetchedAt: confirmed?.rating != null ? new Date() : null,
+        googlePriceLevel: confirmed?.priceLevel ?? null,
+        googleOpeningHours: confirmed?.openingHours ?? null,
         latitude: confirmed?.latitude != null ? String(confirmed.latitude) : null,
         longitude: confirmed?.longitude != null ? String(confirmed.longitude) : null,
       })

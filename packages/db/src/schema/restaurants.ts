@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -98,6 +99,10 @@ export const restaurants = pgTable(
     googleRating: numeric("google_rating", { precision: 2, scale: 1 }),
     googleRatingsTotal: integer("google_ratings_total"),
     googleRatingFetchedAt: timestamp("google_rating_fetched_at"),
+    // Google price level 1–4 ($ to $$$$), null if unknown.
+    googlePriceLevel: integer("google_price_level"),
+    // Snapshot of Google opening hours: { weekdayDescriptions?, periods?, utcOffsetMinutes? }.
+    googleOpeningHours: jsonb("google_opening_hours"),
     // No FK constraint — avoids circular reference with restaurantPhotos table.
     // Cleared in the photos.delete procedure when the referenced photo is removed.
     coverPhotoId: uuid("cover_photo_id"),

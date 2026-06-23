@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
+import { gte } from "drizzle-orm";
 import z from "zod";
-import { appConfig } from "@forkd/db";
+import { appConfig, apiUsage } from "@forkd/db";
 import { logger } from "@forkd/shared";
 import { encrypt } from "../crypto";
 import { adminProcedure, ownerProcedure, protectedProcedure, router } from "../trpc";
@@ -194,5 +195,35 @@ export const configRouter = router({
     }, 500);
 
     return { ok: true, scheduledAt };
+  }),
+
+  // Google Places API usage + rough cost estimate, for the admin Google Places page.
+  googlePlacesUsage: adminProcedure.query(async ({ ctx }) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const monthAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+    const rows = await ctx.db.select().from(apiUsage).where(gte(apiUsage.day, monthAgo));
+
+    const zero = () => ({ search: 0, details: 0, photo: 0 });
+    const todayCounts = zero();
+    const monthCounts = zero();
+    for (const r of rows) {
+      const ep = r.endpoint as keyof ReturnType<typeof zero>;
+      if (!(ep in monthCounts)) continue;
+      monthCounts[ep] += r.count;
+      if (r.day === today) todayCounts[ep] += r.count;
+    }
+
+    // Rough New Places API rates ($ per 1,000 requests). Estimates only — actual
+    // billing depends on the field-mask tier.
+    const RATES = { search: 32, details: 17, photo: 7 } as const;
+    const estCost = (c: ReturnType<typeof zero>) =>
+      (c.search * RATES.search + c.details * RATES.details + c.photo * RATES.photo) / 1000;
+
+    return {
+      today: todayCounts,
+      month: monthCounts,
+      estCostToday: estCost(todayCounts),
+      estCostMonth: estCost(monthCounts),
+    };
   }),
 });

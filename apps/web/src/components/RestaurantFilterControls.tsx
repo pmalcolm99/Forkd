@@ -17,6 +17,7 @@ import {
 import { SlidersHorizontal, X } from "lucide-react";
 import {
   COUNTRIES,
+  PRICE_LEVELS,
   RESTAURANT_STATUS_LABELS,
   US_STATES,
   restaurantStatusEnum,
@@ -63,6 +64,7 @@ export function RestaurantFilterControls({
     filters.status !== undefined,
     filters.state !== undefined,
     filters.country !== undefined,
+    filters.priceLevel !== undefined,
     filters.cuisineTypeId !== undefined,
     filters.addedByUserId !== undefined,
   ].filter(Boolean).length;
@@ -195,6 +197,19 @@ export function RestaurantFilterControls({
             </Select>
 
             <Select
+              label="Price"
+              selectedKeys={filters.priceLevel ? new Set([String(filters.priceLevel)]) : new Set()}
+              onSelectionChange={(keys) => {
+                const val = Array.from(keys)[0] as string | undefined;
+                updateFilter("priceLevel", val || undefined);
+              }}
+            >
+              {PRICE_LEVELS.map((p) => (
+                <SelectItem key={String(p.value)}>{p.label}</SelectItem>
+              ))}
+            </Select>
+
+            <Select
               label="State"
               selectedKeys={filters.state ? new Set([filters.state]) : new Set()}
               onSelectionChange={(keys) => {
@@ -306,6 +321,20 @@ export function RestaurantFilterControls({
         >
           {COUNTRIES.map((c) => (
             <SelectItem key={c.code}>{c.name}</SelectItem>
+          ))}
+        </Select>
+
+        <Select
+          placeholder="Price"
+          className="w-28"
+          selectedKeys={filters.priceLevel ? new Set([String(filters.priceLevel)]) : new Set()}
+          onSelectionChange={(keys) => {
+            const val = Array.from(keys)[0] as string | undefined;
+            updateFilter("priceLevel", val || undefined);
+          }}
+        >
+          {PRICE_LEVELS.map((p) => (
+            <SelectItem key={String(p.value)}>{p.label}</SelectItem>
           ))}
         </Select>
 

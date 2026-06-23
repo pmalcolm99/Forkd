@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import type { db as dbType } from "@forkd/db";
-import { restaurantPhotos } from "@forkd/db";
+import { restaurantPhotos, recordApiUsage } from "@forkd/db";
 import { photoStoragePath, photoThumbStoragePath } from "@forkd/shared";
 import { logger } from "@forkd/shared";
 
@@ -21,6 +21,7 @@ export async function fetchAndStoreGooglePhoto(
 ): Promise<void> {
   const url = `${PHOTOS_BASE}/${photoName}/media?maxHeightPx=1600&key=${apiKey}`;
   const resp = await fetch(url, { redirect: "follow" });
+  void recordApiUsage(db, "photo").catch(() => {});
   if (!resp.ok) throw new Error(`Google Places photo fetch returned ${resp.status}`);
 
   const buf = Buffer.from(await resp.arrayBuffer());
