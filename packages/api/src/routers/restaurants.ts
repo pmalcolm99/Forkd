@@ -1,7 +1,20 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, avg, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  avg,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import z from "zod";
-import { restaurantPhotos, restaurantReviews, restaurants } from "@forkd/db";
+import { restaurantPhotos, restaurantReviews, restaurants, setConfigValue } from "@forkd/db";
 import {
   createRestaurantInput,
   listRestaurantsInput,
@@ -9,12 +22,123 @@ import {
   logger,
   STATE_GEO_BOUNDS,
 } from "@forkd/shared";
-import { protectedProcedure, router } from "../trpc";
+import { adminProcedure, protectedProcedure, router } from "../trpc";
 import { suggestRestaurantMetadata } from "../ai/anthropic";
 import { searchPlaces, getPlaceRating } from "../external/google-places";
 import { fetchAndStoreGooglePhoto } from "../external/google-photo";
 import { getDecryptedConfigValue } from "../config/read";
 import type { db as DbType } from "@forkd/db";
+
+// ── Bulk "refresh all metadata" backfill ──────────────────────────────────────
+// Runs as a detached background loop in the long-lived server (not awaited by the
+// request, so it can't time out). Progress is stored in app_config and polled by
+// the admin UI. Only restaurants linked to Google Places are refreshed.
+
+const REFRESH_STATUS_KEY = "metadata_refresh.status";
+const REFRESH_STALE_MS = 30 * 60 * 1000;
+
+interface RefreshStatus {
+  running: boolean;
+  total: number;
+  done: number;
+  updated: number;
+  failed: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
+const IDLE_STATUS: RefreshStatus = {
+  running: false,
+  total: 0,
+  done: 0,
+  updated: 0,
+  failed: 0,
+  startedAt: null,
+  finishedAt: null,
+};
+
+function parseRefreshStatus(raw: string | null): RefreshStatus {
+  if (!raw) return IDLE_STATUS;
+  try {
+    return { ...IDLE_STATUS, ...(JSON.parse(raw) as Partial<RefreshStatus>) };
+  } catch {
+    return IDLE_STATUS;
+  }
+}
+
+async function writeRefreshStatus(db: typeof DbType, status: RefreshStatus): Promise<void> {
+  await setConfigValue(db, REFRESH_STATUS_KEY, JSON.stringify(status)).catch(() => {});
+}
+
+async function runBulkMetadataRefresh(db: typeof DbType, startedAt: string): Promise<void> {
+  let total = 0;
+  let done = 0;
+  let updated = 0;
+  let failed = 0;
+  const tick = (running: boolean): RefreshStatus => ({
+    running,
+    total,
+    done,
+    updated,
+    failed,
+    startedAt,
+    finishedAt: running ? null : new Date().toISOString(),
+  });
+
+  try {
+    const apiKey = await getDecryptedConfigValue("google_places.api_key", db);
+    if (!apiKey) {
+      await writeRefreshStatus(db, tick(false));
+      return;
+    }
+
+    const rows = await db
+      .select({ id: restaurants.id, googlePlaceId: restaurants.googlePlaceId })
+      .from(restaurants)
+      .where(and(isNull(restaurants.deletedAt), isNotNull(restaurants.googlePlaceId)));
+    total = rows.length;
+    await writeRefreshStatus(db, tick(true));
+
+    for (const r of rows) {
+      try {
+        const result = await getPlaceRating(r.googlePlaceId!, db);
+        if (result.status === "success") {
+          await db
+            .update(restaurants)
+            .set({
+              googleRating: result.rating !== null ? String(result.rating) : null,
+              googleRatingsTotal: result.ratingsTotal,
+              googleRatingFetchedAt: new Date(),
+              googlePriceLevel: result.priceLevel,
+              googleOpeningHours: result.openingHours,
+              ...(result.latitude !== null && result.longitude !== null
+                ? { latitude: String(result.latitude), longitude: String(result.longitude) }
+                : {}),
+              updatedAt: new Date(),
+            })
+            .where(eq(restaurants.id, r.id));
+          if (result.photoNames.length > 0) {
+            await fetchGooglePhotosIfNeeded(result.photoNames, apiKey, r.id, db);
+          }
+          updated += 1;
+        }
+      } catch (err) {
+        failed += 1;
+        logger.warn({ err, restaurantId: r.id }, "Bulk metadata refresh failed for restaurant");
+      }
+      done += 1;
+      await writeRefreshStatus(db, tick(true));
+      // Gentle pacing to stay friendly to the Google Places quota.
+      await new Promise((res) => setTimeout(res, 150));
+    }
+
+    await writeRefreshStatus(db, tick(false));
+    logger.info({ total, updated, failed }, "Bulk metadata refresh complete");
+  } catch (err) {
+    logger.error({ err }, "Bulk metadata refresh crashed");
+    await writeRefreshStatus(db, tick(false));
+  }
+}
 
 // Fetch up to 5 Google Places photos for a restaurant, skipping if photos already exist.
 async function fetchGooglePhotosIfNeeded(
@@ -417,4 +541,26 @@ export const restaurantsRouter = router({
     .mutation(async ({ input, ctx }) => {
       return suggestRestaurantMetadata(input, ctx.db);
     }),
+
+  // Kick off a background refresh of Google metadata for every linked restaurant.
+  refreshAllMetadata: adminProcedure.mutation(async ({ ctx }) => {
+    const current = parseRefreshStatus(await getDecryptedConfigValue(REFRESH_STATUS_KEY, ctx.db));
+    if (
+      current.running &&
+      current.startedAt &&
+      Date.now() - Date.parse(current.startedAt) < REFRESH_STALE_MS
+    ) {
+      return { started: false as const, alreadyRunning: true as const };
+    }
+
+    const startedAt = new Date().toISOString();
+    // Write the running state synchronously so the UI sees it on the next poll.
+    await writeRefreshStatus(ctx.db, { ...IDLE_STATUS, running: true, startedAt });
+    void runBulkMetadataRefresh(ctx.db, startedAt);
+    return { started: true as const, alreadyRunning: false as const };
+  }),
+
+  refreshAllMetadataStatus: adminProcedure.query(async ({ ctx }) => {
+    return parseRefreshStatus(await getDecryptedConfigValue(REFRESH_STATUS_KEY, ctx.db));
+  }),
 });

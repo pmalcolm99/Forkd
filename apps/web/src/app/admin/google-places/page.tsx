@@ -4,6 +4,7 @@ import { serverTrpc } from "@/lib/trpc/server";
 import { AdminTabs } from "../_components/AdminTabs";
 import { GooglePlacesConfigForm } from "./_components/GooglePlacesConfigForm";
 import { GooglePlacesUsage } from "./_components/GooglePlacesUsage";
+import { RefreshAllMetadataButton } from "./_components/RefreshAllMetadataButton";
 
 export default async function AdminGooglePlacesPage() {
   const caller = await serverTrpc();
@@ -16,6 +17,7 @@ export default async function AdminGooglePlacesPage() {
       <h1 className="mb-4 text-2xl font-bold">Admin</h1>
       <AdminTabs isOwner={!!me.isOwner} />
       <GooglePlacesConfigForm initialFields={fields} />
+      <RefreshAllMetadataButton />
       <GooglePlacesUsage />
     </>
   );
