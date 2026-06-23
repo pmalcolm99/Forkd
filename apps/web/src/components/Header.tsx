@@ -35,7 +35,15 @@ type MenuItem = {
 
 export function Header({ userName, isAdmin, isDev }: Props) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const pathname = usePathname();
+
+  function handleRefresh() {
+    // Spin the icon so the tap clearly registers, then reload a beat later so the
+    // animation has time to paint before the navigation starts.
+    setIsRefreshing(true);
+    setTimeout(() => window.location.reload(), 250);
+  }
 
   const navLinks = [
     {
@@ -104,9 +112,10 @@ export function Header({ userName, isAdmin, isDev }: Props) {
             variant="light"
             size="sm"
             aria-label="Refresh"
-            onPress={() => window.location.reload()}
+            isDisabled={isRefreshing}
+            onPress={handleRefresh}
           >
-            <RotateCw className="h-5 w-5" />
+            <RotateCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
         </NavbarItem>
         {/* Quick "add restaurant" — shown everywhere except the list page, which
