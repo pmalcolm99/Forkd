@@ -10,6 +10,7 @@ export * from "./countries";
 export * from "./themes";
 export * from "./priceLevel";
 export * from "./openingHours";
+export * from "./photoEncoding";
 export * from "./formatRelativeTime";
 export { formatFamilyAverage } from "./familyAverage";
 export { parseRestaurantFilters } from "./parseRestaurantFilters";

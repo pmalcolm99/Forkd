@@ -19,6 +19,7 @@ import {
 import { Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 import { photoUrl } from "@/lib/photoUrl";
+import { PhotoOptimizeCard } from "./PhotoOptimizeCard";
 
 function formatBytes(bytes: number): string {
   if (bytes <= 0) return "0 B";
@@ -135,6 +136,8 @@ export function StoragePanel() {
           )}
         </CardBody>
       </Card>
+
+      <PhotoOptimizeCard />
 
       {/* Maintenance */}
       <Card>

@@ -4,7 +4,14 @@ import path from "node:path";
 import sharp from "sharp";
 import type { db as dbType } from "@forkd/db";
 import { restaurantPhotos, recordApiUsage } from "@forkd/db";
-import { photoStoragePath, photoThumbStoragePath } from "@forkd/shared";
+import {
+  PHOTO_FULL_MAX,
+  PHOTO_FULL_QUALITY,
+  PHOTO_THUMB_QUALITY,
+  PHOTO_THUMB_SIZE,
+  photoStoragePath,
+  photoThumbStoragePath,
+} from "@forkd/shared";
 import { logger } from "@forkd/shared";
 
 const PHOTOS_BASE = "https://places.googleapis.com/v1";
@@ -30,13 +37,13 @@ export async function fetchAndStoreGooglePhoto(
   const [fullRes, thumbBuf] = await Promise.all([
     base
       .clone()
-      .resize(2000, 2000, { fit: "inside", withoutEnlargement: true })
-      .webp({ quality: 85 })
+      .resize(PHOTO_FULL_MAX, PHOTO_FULL_MAX, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: PHOTO_FULL_QUALITY })
       .toBuffer({ resolveWithObject: true }),
     base
       .clone()
-      .resize(400, 400, { fit: "cover", position: "centre" })
-      .webp({ quality: 80 })
+      .resize(PHOTO_THUMB_SIZE, PHOTO_THUMB_SIZE, { fit: "cover", position: "centre" })
+      .webp({ quality: PHOTO_THUMB_QUALITY })
       .toBuffer(),
   ]);
 
@@ -60,6 +67,8 @@ export async function fetchAndStoreGooglePhoto(
     height: fullRes.info.height,
     byteSize: fullRes.data.length,
     source: "google_places",
+    // Encoded with the current standard → excluded from the bulk optimizer.
+    optimizedAt: new Date(),
   });
 
   logger.info({ restaurantId, photoId }, "Google Places photo stored");

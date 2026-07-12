@@ -5,7 +5,10 @@
 @source "../../node_modules/@heroui/theme/dist";
 
 body {
-  overflow-x: hidden;
+  /* clip (not hidden) prevents horizontal scroll WITHOUT establishing a scroll
+     container — `overflow: hidden` here broke the sticky Navbar, so the menu
+     toggle scrolled out of reach and the mobile menu couldn't be collapsed. */
+  overflow-x: clip;
   /* Landscape notch (left/right) and home-bar (bottom) insets applied globally
      so no individual page needs to account for them. Top inset is handled by
      the Navbar's pt-[env(safe-area-inset-top)] instead, so the dark background

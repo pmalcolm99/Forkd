@@ -126,6 +126,8 @@ export async function POST(req: Request): Promise<Response> {
       width,
       height,
       byteSize,
+      // Encoded with the current standard → excluded from the bulk optimizer.
+      optimizedAt: new Date(),
     })
     .returning();
 

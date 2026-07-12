@@ -7,6 +7,12 @@ import {
   getStorageUsage,
   listAllUploadFiles,
 } from "@/lib/storageStats";
+import {
+  backupAndOptimizePhoto,
+  deleteOriginals,
+  originalsSizeBytes,
+  restoreOriginal,
+} from "@/lib/photoOptimize";
 import { requestShutdown } from "@/server/shutdown"; // registers SIGTERM/SIGINT as side effect
 
 const handler = (req: Request) =>
@@ -23,6 +29,10 @@ const handler = (req: Request) =>
           listAllUploadFiles,
           deleteUploadFile,
           clearOrphanedVideos,
+          backupAndOptimizePhoto,
+          restoreOriginal,
+          deleteOriginals,
+          originalsSizeBytes,
         },
         shutdownFn: requestShutdown,
       }),

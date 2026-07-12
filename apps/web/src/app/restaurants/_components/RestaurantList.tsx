@@ -27,6 +27,7 @@ import {
 import { trpc } from "@/lib/trpc/client";
 import { photoUrl } from "@/lib/photoUrl";
 import { useRestaurantFilters } from "@/lib/useRestaurantFilters";
+import { useApplyDefaultFilters } from "@/lib/useApplyDefaultFilters";
 import { RestaurantFilterControls } from "@/components/RestaurantFilterControls";
 import { OnboardingCard } from "@/components/OnboardingCard";
 
@@ -46,6 +47,8 @@ export function RestaurantList() {
   const { data: cuisines } = trpc.cuisines.list.useQuery();
   const { data: users } = trpc.users.listForFilter.useQuery();
   const { data: me } = trpc.auth.me.useQuery();
+
+  useApplyDefaultFilters(me?.defaultFilters?.restaurants, me !== undefined);
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / filters.pageSize)) : 1;
 

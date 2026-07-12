@@ -33,6 +33,10 @@ export const createTRPCContext = async ({
     listAllUploadFiles?: () => Promise<{ relPath: string; byteSize: number; mtimeMs: number }[]>;
     deleteUploadFile?: (relPath: string) => Promise<void>;
     clearOrphanedVideos?: () => Promise<{ count: number; freedBytes: number }>;
+    backupAndOptimizePhoto?: (filePath: string, thumbPath: string) => Promise<{ byteSize: number }>;
+    restoreOriginal?: (filePath: string, thumbPath: string) => Promise<void>;
+    deleteOriginals?: () => Promise<{ freedBytes: number }>;
+    originalsSizeBytes?: () => Promise<number>;
   };
   shutdownFn?: (reason: string, actorId: string) => Promise<void>;
 }) => {

@@ -5,7 +5,13 @@ import { count, eq } from "drizzle-orm";
 import z from "zod";
 import { makeSignature } from "@forkd/auth";
 import { user, session } from "@forkd/db";
-import { logger, themeEnum, usStateEnum } from "@forkd/shared";
+import {
+  defaultFiltersSchema,
+  logger,
+  mapDefaultViewEnum,
+  themeEnum,
+  usStateEnum,
+} from "@forkd/shared";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 const updateProfileSchema = z.object({
@@ -13,12 +19,37 @@ const updateProfileSchema = z.object({
   lastName: z.string().min(1, "Last name required").max(100).trim(),
   homeState: usStateEnum.nullable().optional(),
   theme: themeEnum.nullable().optional(),
+  mapDefaultView: mapDefaultViewEnum.nullable().optional(),
+  defaultFilters: defaultFiltersSchema.nullable().optional(),
 });
+
+// defaultFilters is stored as a JSON text column; parse it defensively for `me`.
+function parseDefaultFilters(raw: string | null | undefined) {
+  if (!raw) return null;
+  try {
+    const parsed = defaultFiltersSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
 
 export const authRouter = router({
   me: protectedProcedure.query(({ ctx }) => {
     const { id, email, firstName, lastName, isAdmin, isOwner, homeState, theme } = ctx.user;
-    return { id, email, firstName, lastName, isAdmin, isOwner, homeState, theme };
+    return {
+      id,
+      email,
+      firstName,
+      lastName,
+      isAdmin,
+      isOwner,
+      homeState,
+      theme,
+      mapDefaultView: ctx.user.mapDefaultView ?? null,
+      defaultFilters: parseDefaultFilters(ctx.user.defaultFilters),
+      lastSeenChangelogVersion: ctx.user.lastSeenChangelogVersion ?? null,
+    };
   }),
 
   updateProfile: protectedProcedure.input(updateProfileSchema).mutation(async ({ input, ctx }) => {
@@ -32,7 +63,23 @@ export const authRouter = router({
         homeState: input.homeState ?? null,
         // Only overwrite theme when provided, so non-theme profile saves keep it.
         ...(input.theme !== undefined ? { theme: input.theme ?? null } : {}),
+        ...(input.mapDefaultView !== undefined
+          ? { mapDefaultView: input.mapDefaultView ?? null }
+          : {}),
+        ...(input.defaultFilters !== undefined
+          ? { defaultFilters: input.defaultFilters ? JSON.stringify(input.defaultFilters) : null }
+          : {}),
       })
+      .where(eq(user.id, ctx.user.id));
+    return { success: true };
+  }),
+
+  // Stamp the user as having seen the current version's changelog (from the popup
+  // dismiss, and from the welcome flow so new users start caught up).
+  markChangelogSeen: protectedProcedure.mutation(async ({ ctx }) => {
+    await ctx.db
+      .update(user)
+      .set({ lastSeenChangelogVersion: process.env.APP_VERSION ?? null })
       .where(eq(user.id, ctx.user.id));
     return { success: true };
   }),

@@ -1,5 +1,11 @@
 import sharp from "sharp";
-import type { AcceptedMimeType } from "@forkd/shared";
+import {
+  PHOTO_FULL_MAX,
+  PHOTO_FULL_QUALITY,
+  PHOTO_THUMB_QUALITY,
+  PHOTO_THUMB_SIZE,
+  type AcceptedMimeType,
+} from "@forkd/shared";
 
 export function detectImageFormat(buf: Buffer): AcceptedMimeType | null {
   if (buf.length < 12) return null;
@@ -50,13 +56,13 @@ export async function processUploadedImage(
   const [fullRes, thumbBuf] = await Promise.all([
     base
       .clone()
-      .resize(2000, 2000, { fit: "inside", withoutEnlargement: true })
-      .webp({ quality: 85 })
+      .resize(PHOTO_FULL_MAX, PHOTO_FULL_MAX, { fit: "inside", withoutEnlargement: true })
+      .webp({ quality: PHOTO_FULL_QUALITY })
       .toBuffer({ resolveWithObject: true }),
     base
       .clone()
-      .resize(400, 400, { fit: "cover", position: "centre" })
-      .webp({ quality: 80 })
+      .resize(PHOTO_THUMB_SIZE, PHOTO_THUMB_SIZE, { fit: "cover", position: "centre" })
+      .webp({ quality: PHOTO_THUMB_QUALITY })
       .toBuffer(),
   ]);
 

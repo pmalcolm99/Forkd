@@ -12,7 +12,7 @@ import {
   type OpeningHours,
 } from "@forkd/shared";
 import { serverTrpc } from "@/lib/trpc/server";
-import { DeleteRestaurantButton } from "./_components/DeleteRestaurantButton";
+import { RestaurantActionsMenu } from "./_components/RestaurantActionsMenu";
 import { DetailMap } from "./_components/DetailMap";
 import { RatingDisplay } from "./_components/RatingDisplay";
 import { RefreshGoogleRatingButton } from "./_components/RefreshGoogleRatingButton";
@@ -90,10 +90,7 @@ export default async function RestaurantDetailPage({ params }: Props) {
       </div>
 
       <div className="mb-4 flex flex-wrap gap-3">
-        <LinkButton href={`/restaurants/${id}/edit`} variant="flat">
-          Edit
-        </LinkButton>
-        {canDelete && <DeleteRestaurantButton id={id} />}
+        <RestaurantActionsMenu id={id} canDelete={canDelete} />
         <RefreshGoogleRatingButton
           restaurantId={id}
           googlePlacesConfigured={googlePlacesConfigured}
@@ -202,11 +199,15 @@ export default async function RestaurantDetailPage({ params }: Props) {
       <section className="mb-8">
         <h2 className="mb-4 text-xl font-semibold">Reviews</h2>
 
-        {myReview ? (
-          <ReviewCard review={myReview} isOwnReview={true} />
-        ) : (
-          currentUser && <AddReviewButton restaurantId={id} />
-        )}
+        {/* mb-4 so the "Leave a review" button doesn't touch the first family
+            member's review card below it. */}
+        <div className="mb-4">
+          {myReview ? (
+            <ReviewCard review={myReview} isOwnReview={true} />
+          ) : (
+            currentUser && <AddReviewButton restaurantId={id} />
+          )}
+        </div>
 
         {otherReviews.map((r) => (
           <ReviewCard key={r.id} review={r} isOwnReview={false} />

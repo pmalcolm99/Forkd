@@ -76,6 +76,9 @@ export async function listAllUploadFiles(): Promise<UploadFile[]> {
       throw err;
     }
     for (const entry of entries) {
+      // Skip the optimizer's originals backup — those files intentionally have no
+      // DB record and must not appear as "orphans" (deleting them breaks revert).
+      if (entry.isDirectory() && dir === uploadsDir && entry.name === "originals") continue;
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         await walk(full);

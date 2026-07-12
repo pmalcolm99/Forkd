@@ -16,6 +16,13 @@ export const user = pgTable(
     homeState: text("home_state"),
     // Selected UI theme id (see @forkd/shared THEMES). Null falls back to default.
     theme: text("theme"),
+    // "current_location" | "home_state" — how the Map page initially focuses.
+    // Null falls back to current_location.
+    mapDefaultView: text("map_default_view"),
+    // JSON: { restaurants?: {...filters}, map?: {...filters} } applied on page load.
+    defaultFilters: text("default_filters"),
+    // App version whose changelog the user has already seen (gates the popup).
+    lastSeenChangelogVersion: text("last_seen_changelog_version"),
     lastActiveAt: timestamp("last_active_at"),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),

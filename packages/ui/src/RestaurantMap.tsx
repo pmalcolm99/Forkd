@@ -21,20 +21,31 @@ export interface MapRestaurant {
   coverPhotoUrl: string | null;
 }
 
+type GeoBounds = {
+  low: { latitude: number; longitude: number };
+  high: { latitude: number; longitude: number };
+};
+
 interface Props {
   restaurants: MapRestaurant[];
   height?: string;
   userLocation?: { latitude: number; longitude: number } | null;
   locationZoom?: { version: number; radiusMiles?: number };
+  // One-time initial viewport (e.g. the user's home-state bounds). Applied once
+  // when first available; suppresses the auto-fit-to-all-restaurants behavior.
+  initialBounds?: GeoBounds | null;
+  disableAutoFit?: boolean;
 }
 
 interface FitBoundsProps {
   restaurants: MapRestaurant[];
+  disabled?: boolean;
 }
 
-function FitBounds({ restaurants }: FitBoundsProps) {
+function FitBounds({ restaurants, disabled }: FitBoundsProps) {
   const map = useMap();
 
+  if (disabled) return null;
   if (restaurants.length === 0) return null;
 
   if (restaurants.length === 1) {
@@ -86,11 +97,29 @@ function ZoomToUserLocation({ locationZoom, userLocation, restaurants }: ZoomToU
   return null;
 }
 
+function InitialBounds({ bounds }: { bounds: GeoBounds | null | undefined }) {
+  const map = useMap();
+  const done = useRef(false);
+
+  useEffect(() => {
+    if (done.current || !bounds) return;
+    done.current = true;
+    map.fitBounds([
+      [bounds.low.latitude, bounds.low.longitude],
+      [bounds.high.latitude, bounds.high.longitude],
+    ]);
+  }, [bounds, map]);
+
+  return null;
+}
+
 export function RestaurantMap({
   restaurants,
   height = "600px",
   userLocation,
   locationZoom,
+  initialBounds,
+  disableAutoFit,
 }: Props) {
   return (
     <MapContainer center={[39.83, -98.58]} zoom={4} style={{ height, width: "100%" }}>
@@ -98,7 +127,8 @@ export function RestaurantMap({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
-      <FitBounds restaurants={restaurants} />
+      <FitBounds restaurants={restaurants} disabled={disableAutoFit} />
+      <InitialBounds bounds={initialBounds} />
       {userLocation && locationZoom && (
         <ZoomToUserLocation
           locationZoom={locationZoom}

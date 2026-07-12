@@ -55,6 +55,24 @@ export const auth = betterAuth({
         fieldName: "theme",
         input: false,
       },
+      mapDefaultView: {
+        type: "string" as const,
+        required: false,
+        fieldName: "mapDefaultView",
+        input: false,
+      },
+      defaultFilters: {
+        type: "string" as const,
+        required: false,
+        fieldName: "defaultFilters",
+        input: false,
+      },
+      lastSeenChangelogVersion: {
+        type: "string" as const,
+        required: false,
+        fieldName: "lastSeenChangelogVersion",
+        input: false,
+      },
       lastActiveAt: {
         type: "date" as const,
         required: false,

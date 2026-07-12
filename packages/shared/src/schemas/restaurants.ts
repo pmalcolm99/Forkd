@@ -113,6 +113,49 @@ export const listRestaurantsInput = z.object({
 });
 export type ListRestaurantsInput = z.infer<typeof listRestaurantsInput>;
 
+export const restaurantSortEnum = z.enum([
+  "recent",
+  "alphabetical",
+  "family_rating",
+  "google_rating",
+]);
+
+// A saved default filter set for a page (applied on load when the URL has none).
+// A subset of listRestaurantsInput — no search/page/pageSize.
+export const filterSetSchema = z
+  .object({
+    status: z.array(restaurantStatusEnum).optional(),
+    state: usStateEnum.optional(),
+    country: countryCodeEnum.optional(),
+    priceLevel: z.number().int().min(1).max(4).optional(),
+    cuisineTypeId: z.string().uuid().optional(),
+    addedByUserId: z.string().optional(),
+    sort: restaurantSortEnum.optional(),
+  })
+  .strict();
+export type FilterSet = z.infer<typeof filterSetSchema>;
+
+export const defaultFiltersSchema = z
+  .object({ restaurants: filterSetSchema.optional(), map: filterSetSchema.optional() })
+  .strict();
+export type DefaultFilters = z.infer<typeof defaultFiltersSchema>;
+
+export const mapDefaultViewEnum = z.enum(["current_location", "home_state"]);
+export type MapDefaultView = z.infer<typeof mapDefaultViewEnum>;
+
+/** Convert a saved FilterSet into URLSearchParams (for applying defaults on load). */
+export function filterSetToSearchParams(set: FilterSet): URLSearchParams {
+  const p = new URLSearchParams();
+  if (set.status?.length) set.status.forEach((s) => p.append("status", s));
+  if (set.state) p.set("state", set.state);
+  if (set.country) p.set("country", set.country);
+  if (set.priceLevel) p.set("priceLevel", String(set.priceLevel));
+  if (set.cuisineTypeId) p.set("cuisineTypeId", set.cuisineTypeId);
+  if (set.addedByUserId) p.set("addedByUserId", set.addedByUserId);
+  if (set.sort) p.set("sort", set.sort);
+  return p;
+}
+
 // Maps a restaurant DB row back to form input fields.
 // Uses a structural type so packages/shared has no dependency on @forkd/db.
 export function restaurantRowToInput(row: {

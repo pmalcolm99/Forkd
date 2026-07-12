@@ -5,8 +5,10 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { LocateFixed } from "lucide-react";
 import { Button, Spinner } from "@heroui/react";
+import { STATE_GEO_BOUNDS, type StateBounds } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
 import { useRestaurantFilters } from "@/lib/useRestaurantFilters";
+import { useApplyDefaultFilters } from "@/lib/useApplyDefaultFilters";
 import { useUserLocation } from "@/lib/useUserLocation";
 import { RestaurantFilterControls } from "@/components/RestaurantFilterControls";
 import { photoUrl } from "@/lib/photoUrl";
@@ -17,6 +19,8 @@ const DynamicMap = dynamic<{
   height?: string;
   userLocation?: { latitude: number; longitude: number } | null;
   locationZoom?: { version: number; radiusMiles?: number };
+  initialBounds?: StateBounds | null;
+  disableAutoFit?: boolean;
 }>(() => import("@forkd/ui").then((m) => m.RestaurantMap), {
   ssr: false,
   loading: () => (
@@ -29,12 +33,13 @@ const DynamicMap = dynamic<{
 export function MapClientWrapper() {
   const { filters, updateFilter, resetFilters } = useRestaurantFilters();
   const [searchValue, setSearchValue] = useState(filters.search ?? "");
-  const hasSetHomeState = useRef(false);
+  const didInitView = useRef(false);
   const {
     location: userLocation,
     isLocating,
     error: locationError,
     refresh: refreshLocation,
+    focus: focusLocation,
     zoomVersion,
   } = useUserLocation();
   const { data: radiusMiles } = trpc.config.locationRadiusMiles.useQuery();
@@ -54,14 +59,25 @@ export function MapClientWrapper() {
   const { data: users } = trpc.users.listForFilter.useQuery();
   const { data: me } = trpc.auth.me.useQuery();
 
+  useApplyDefaultFilters(me?.defaultFilters?.map, me !== undefined);
+
+  const mapDefaultView = me?.mapDefaultView ?? "current_location";
+  const homeStateBounds =
+    mapDefaultView === "home_state" && me?.homeState
+      ? (STATE_GEO_BOUNDS[me.homeState] ?? null)
+      : null;
+
+  // One-shot on mount (once the profile has loaded): focus the map per the user's
+  // default map view. Current location uses a cached fix if fresh (no prompt),
+  // otherwise prompts once; home state uses the state bounds (handled via prop).
   useEffect(() => {
-    if (!hasSetHomeState.current && me !== undefined) {
-      hasSetHomeState.current = true;
-      if (me.homeState && !filters.state) {
-        updateFilter("state", me.homeState);
-      }
+    if (didInitView.current || me === undefined) return;
+    didInitView.current = true;
+    if (mapDefaultView === "current_location") {
+      if (userLocation) focusLocation();
+      else refreshLocation();
     }
-  }, [me]); // intentionally omits filters/updateFilter — stable, one-shot on mount
+  }, [me]); // one-shot; deps intentionally minimal
 
   const allItems = data?.items ?? [];
   const withCoords = allItems.filter(
@@ -98,6 +114,7 @@ export function MapClientWrapper() {
         users={users ?? []}
         searchValue={searchValue}
         onSearchValueChange={setSearchValue}
+        homeState={me?.homeState ?? null}
       />
 
       {missingCount > 0 && (
@@ -122,6 +139,8 @@ export function MapClientWrapper() {
               locationZoom={
                 userLocation ? { version: zoomVersion, radiusMiles: radiusMiles ?? 25 } : undefined
               }
+              initialBounds={homeStateBounds}
+              disableAutoFit={mapDefaultView === "home_state"}
             />
           )}
         </div>

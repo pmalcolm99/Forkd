@@ -15,8 +15,16 @@ export function WelcomeForm() {
   const [theme, setTheme] = useState<ThemeId>(DEFAULT_THEME);
   const [error, setError] = useState<string | null>(null);
 
+  // Stamp new users as caught-up on the changelog so they don't get a "what's new"
+  // popup for the app as it already is when they first sign in.
+  const markChangelogSeen = trpc.auth.markChangelogSeen.useMutation();
+
   const updateProfile = trpc.auth.updateProfile.useMutation({
-    onSuccess: () => router.push("/"),
+    onSuccess: () => {
+      markChangelogSeen.mutate(undefined, {
+        onSettled: () => router.push("/"),
+      });
+    },
     onError: (e) => setError(e.message),
   });
 

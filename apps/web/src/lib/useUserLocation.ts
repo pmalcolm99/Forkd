@@ -65,5 +65,10 @@ export function useUserLocation() {
     );
   }
 
-  return { location, isLocating, error, refresh, zoomVersion };
+  // Recenter on the already-known location without a new GPS request (no prompt).
+  function focus() {
+    if (location) setZoomVersion((v) => v + 1);
+  }
+
+  return { location, isLocating, error, refresh, focus, zoomVersion };
 }

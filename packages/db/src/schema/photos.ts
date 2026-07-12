@@ -18,5 +18,10 @@ export const restaurantPhotos = pgTable("restaurant_photos", {
   height: integer("height"),
   byteSize: integer("byte_size").notNull(),
   source: photoSourceEnum("source").notNull().default("user"),
+  // Set when the photo has been re-encoded at the current optimization standard.
+  // Null = not yet optimized (targeted by the bulk "optimize existing" job).
+  optimizedAt: timestamp("optimized_at"),
+  // Full-size byte size before optimization (for savings reporting / revert).
+  originalByteSize: integer("original_byte_size"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
