@@ -42,8 +42,6 @@ export async function generateViewport(): Promise<Viewport> {
 
 const isDev = process.env.NODE_ENV !== "production";
 
-const appVersion = process.env.APP_VERSION ?? "0.0.0";
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let isAdmin = false;
   let userName: string | null = null;
@@ -69,11 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Providers>
           {children}
           {/* Inside Providers — ChangelogPopup uses a tRPC hook. */}
-          <ChangelogPopup
-            appVersion={appVersion}
-            lastSeen={changelogLastSeen}
-            hasOnboarded={hasOnboarded}
-          />
+          <ChangelogPopup lastSeen={changelogLastSeen} hasOnboarded={hasOnboarded} />
         </Providers>
         <ServiceWorkerRegister />
         <InstallPrompt />

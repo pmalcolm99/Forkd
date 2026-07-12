@@ -159,12 +159,15 @@ export function ProfileForm({ defaultValues, cuisines, users }: Props) {
         />
       </div>
 
-      {error && <p className="text-sm text-danger">{error}</p>}
-      {update.isSuccess && <p className="text-sm text-success">Profile saved.</p>}
-
-      <Button type="submit" color="primary" isLoading={update.isPending}>
-        Save
-      </Button>
+      {/* Sticky footer so Save stays reachable without scrolling to the bottom.
+          -mx-6/px-6 lets it span the full width inside the max-w-xl p-6 <main>. */}
+      <div className="sticky bottom-0 -mx-6 mt-2 border-t border-default-200 bg-background px-6 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3">
+        {error && <p className="mb-2 text-sm text-danger">{error}</p>}
+        {update.isSuccess && <p className="mb-2 text-sm text-success">Profile saved.</p>}
+        <Button type="submit" color="primary" isLoading={update.isPending} className="w-full">
+          Save
+        </Button>
+      </div>
     </form>
   );
 }

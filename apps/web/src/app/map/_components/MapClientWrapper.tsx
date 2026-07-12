@@ -67,6 +67,12 @@ export function MapClientWrapper() {
       ? (STATE_GEO_BOUNDS[me.homeState] ?? null)
       : null;
 
+  // Suppress the fit-to-all-restaurants view whenever we have an intended focus,
+  // so it doesn't override it on re-renders (the "reverts to whole country" bug).
+  // Falls back to fit-all only when current-location has no fix yet (e.g. denied).
+  const disableAutoFit =
+    (mapDefaultView === "current_location" && !!userLocation) || !!homeStateBounds;
+
   // One-shot on mount (once the profile has loaded): focus the map per the user's
   // default map view. Current location uses a cached fix if fresh (no prompt),
   // otherwise prompts once; home state uses the state bounds (handled via prop).
@@ -140,7 +146,7 @@ export function MapClientWrapper() {
                 userLocation ? { version: zoomVersion, radiusMiles: radiusMiles ?? 25 } : undefined
               }
               initialBounds={homeStateBounds}
-              disableAutoFit={mapDefaultView === "home_state"}
+              disableAutoFit={disableAutoFit}
             />
           )}
         </div>

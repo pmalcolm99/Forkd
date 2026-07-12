@@ -7,7 +7,6 @@ import { trpc } from "@/lib/trpc/client";
 import { unseenChangelog } from "@/lib/changelog";
 
 interface Props {
-  appVersion: string;
   lastSeen: string | null;
   hasOnboarded: boolean;
 }
@@ -17,9 +16,12 @@ interface Props {
  * last saw, once per user per version. Hidden during new-user onboarding (the
  * welcome flow stamps the current version so new users start caught up).
  */
-export function ChangelogPopup({ appVersion, lastSeen, hasOnboarded }: Props) {
+export function ChangelogPopup({ lastSeen, hasOnboarded }: Props) {
   const entries = hasOnboarded ? unseenChangelog(lastSeen) : [];
   const [open, setOpen] = useState(entries.length > 0);
+  // Header reflects the newest release with notes (not the running app version,
+  // which may be a bugfix bump ahead of the last feature entry).
+  const headerVersion = entries[0]?.version ?? "";
 
   const markSeen = trpc.auth.markChangelogSeen.useMutation();
 
@@ -36,7 +38,7 @@ export function ChangelogPopup({ appVersion, lastSeen, hasOnboarded }: Props) {
       <ModalContent>
         <ModalHeader className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
-          What&apos;s new in v{appVersion}
+          What&apos;s new in v{headerVersion}
         </ModalHeader>
         <ModalBody className="pb-2">
           {entries.map((entry) => (

@@ -250,32 +250,33 @@ export function RestaurantFilterControls({
                 </SelectItem>
               ))}
             </Select>
+          </DrawerBody>
+
+          <DrawerFooter className="flex flex-col gap-2">
             <Button
               as={NextLink}
               href="/profile#default-filters"
               variant="light"
               size="sm"
               startContent={<SlidersVertical className="h-3.5 w-3.5" />}
-              className="self-start"
             >
               Modify defaults
             </Button>
-          </DrawerBody>
-
-          <DrawerFooter className="flex gap-2">
-            <Button
-              variant="flat"
-              className="flex-1"
-              onPress={() => {
-                resetFilters();
-                setDrawerOpen(false);
-              }}
-            >
-              Reset
-            </Button>
-            <Button color="primary" className="flex-1" onPress={() => setDrawerOpen(false)}>
-              Apply
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="flat"
+                className="flex-1"
+                onPress={() => {
+                  resetFilters();
+                  setDrawerOpen(false);
+                }}
+              >
+                Reset
+              </Button>
+              <Button color="primary" className="flex-1" onPress={() => setDrawerOpen(false)}>
+                Apply
+              </Button>
+            </div>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
