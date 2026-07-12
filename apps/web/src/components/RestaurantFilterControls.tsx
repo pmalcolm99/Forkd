@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Badge,
   Button,
-  Chip,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -79,16 +78,16 @@ export function RestaurantFilterControls({
     onSearchValueChange("");
   }
 
+  // A Button (not a Chip) so it matches the height of the Filters/Reset buttons.
   const homeStateChip = homeState ? (
-    <Chip
+    <Button
       size="sm"
       variant={homeStateActive ? "solid" : "flat"}
       color={homeStateActive ? "primary" : "default"}
-      className="cursor-pointer"
-      onClick={() => updateFilter("state", homeStateActive ? undefined : homeState)}
+      onPress={() => updateFilter("state", homeStateActive ? undefined : homeState)}
     >
       {homeState}
-    </Chip>
+    </Button>
   ) : null;
 
   const sortSelect = (

@@ -101,6 +101,7 @@ export function BackupsSection() {
           </div>
           <Button
             color="primary"
+            className="shrink-0 whitespace-nowrap"
             isLoading={createBackup.isPending || (busy && activeJob?.kind === "backup")}
             isDisabled={busy}
             onPress={() => createBackup.mutate()}

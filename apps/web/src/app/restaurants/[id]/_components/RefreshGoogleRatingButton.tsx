@@ -33,7 +33,6 @@ export function RefreshGoogleRatingButton({ restaurantId, googlePlacesConfigured
       <Tooltip content={disabledReason ?? ""} isDisabled={disabledReason === null}>
         <Button
           variant="flat"
-          size="sm"
           isLoading={isPending}
           isDisabled={disabledReason !== null || isPending}
           onPress={() => {
