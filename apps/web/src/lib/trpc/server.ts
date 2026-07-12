@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { and, eq, gt } from "drizzle-orm";
 import { createCallerFactory, appRouter } from "@forkd/api";
@@ -9,7 +10,12 @@ const createCaller = createCallerFactory(appRouter);
 // Bypass auth.api.getSession (which requires a full HTTP request context) and
 // look up the session directly from the DB. This is the same logic Better Auth
 // uses internally: verify the HMAC-signed cookie, then join session + user.
-async function resolveSessionFromCookie() {
+//
+// Wrapped in React cache() so repeated serverTrpc() calls within a single render
+// pass (e.g. generateViewport + RootLayout + the page) share one cookie-verify +
+// DB join instead of repeating it. The memo is per-request and cleared between
+// requests, so there's no cross-request leakage.
+const resolveSessionFromCookie = cache(async function resolveSessionFromCookie() {
   const cookieStore = await cookies();
   const tokenCookie = cookieStore.get("forkd.session_token");
   if (!tokenCookie?.value) return null;
@@ -42,7 +48,7 @@ async function resolveSessionFromCookie() {
   const row = rows[0];
   if (!row) return null;
   return { session: row.session, user: row.user };
-}
+});
 
 export const serverTrpc = async () => {
   const data = await resolveSessionFromCookie();

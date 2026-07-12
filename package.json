@@ -1,7 +1,7 @@
 {
   "name": "forkd",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "packageManager": "pnpm@11.0.9",
   "scripts": {
