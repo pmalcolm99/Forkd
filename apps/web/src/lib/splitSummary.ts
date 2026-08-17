@@ -1,4 +1,4 @@
-import { formatCents, type SplitMathResult } from "@forkd/shared";
+import { moneyDisplay, type SplitMathResult } from "@forkd/shared";
 
 interface SummaryInput {
   title: string;
@@ -21,12 +21,16 @@ interface SummaryInput {
  * a wall of misaligned pipes.
  */
 export function buildSplitSummary(input: SummaryInput): string {
-  const converting = input.effectiveFxRate != null && input.effectiveFxRate !== 1;
+  // The group-chat text shows both figures — it gets pasted somewhere with no
+  // context, so "$38.25 (€33.00)" saves an argument later.
+  const display = moneyDisplay({
+    currency: input.currency,
+    homeCurrency: input.homeCurrency,
+    effectiveFxRate: input.effectiveFxRate,
+  });
   const money = (cents: number) => {
-    const base = formatCents(cents, input.currency);
-    if (!converting) return base;
-    const home = formatCents(Math.round(cents * input.effectiveFxRate!), input.homeCurrency);
-    return `${home} (${base})`;
+    const base = display.formatReceipt(cents);
+    return display.converting ? `${display.format(cents)} (${base})` : base;
   };
 
   const lines: string[] = [];

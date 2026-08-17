@@ -8,6 +8,7 @@ export * from "./photoPaths";
 export * from "./currencies";
 export * from "./receiptEncoding";
 export * from "./splitMath";
+export * from "./splitCsv";
 export * from "./restaurantStatus";
 export * from "./usStates";
 export * from "./countries";

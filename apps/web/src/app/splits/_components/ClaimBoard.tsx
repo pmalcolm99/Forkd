@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button, Card, CardBody, Chip } from "@heroui/react";
 import { Check } from "lucide-react";
-import { computeSplit, formatCents } from "@forkd/shared";
+import { computeSplit, moneyDisplay } from "@forkd/shared";
 
 export interface ClaimBoardItem {
   id: string;
@@ -110,11 +110,9 @@ export function ClaimBoard({
   });
 
   const myShare = math.participants.find((p) => p.participantId === myParticipantId);
-  const converting = effectiveFxRate != null && effectiveFxRate !== 1 && currency !== homeCurrency;
-  const money = (cents: number) =>
-    converting
-      ? formatCents(Math.round(cents * effectiveFxRate!), homeCurrency)
-      : formatCents(cents, currency);
+  const display = moneyDisplay({ currency, homeCurrency, effectiveFxRate });
+  const converting = display.converting;
+  const money = display.format;
 
   function toggle(itemId: string) {
     setDirty(true);
@@ -131,8 +129,12 @@ export function ClaimBoard({
     setDirty(false);
   }
 
+  // No bottom padding here: this list is not the last thing on the page (the
+  // breakdown and settle-up cards follow it), so padding to clear the fixed bar
+  // would open half a screen of dead space mid-page. The clearance belongs to
+  // whatever renders last — see the claim tab in SplitDetail.
   return (
-    <div className="flex flex-col gap-3 pb-40">
+    <div className="flex flex-col gap-3">
       {converting && (
         <p className="text-xs text-default-400">
           Amounts are shown in {homeCurrency}; the receipt is in {currency}.

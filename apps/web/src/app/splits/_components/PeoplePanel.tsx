@@ -31,6 +31,7 @@ export function PeoplePanel({
   const [guestName, setGuestName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [guestLink, setGuestLink] = useState<{ id: string; url: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const users = trpc.users.listForFilter.useQuery();
   const guestEnabled = trpc.splits.guestLinksEnabled.useQuery();
@@ -50,6 +51,7 @@ export function PeoplePanel({
   const updateSplit = trpc.splits.update.useMutation({ onSuccess: onChanged });
   const mintGuestLink = trpc.splits.mintGuestLink.useMutation({
     onSuccess: (res, vars) => {
+      setCopied(false);
       setGuestLink({
         id: vars.participantId,
         url: `${window.location.origin}/g/${res.token}`,
@@ -138,19 +140,34 @@ export function PeoplePanel({
         </div>
 
         {guestLink && (
-          <Alert color="success" className="text-sm">
-            <div className="flex w-full items-center gap-2">
+          // HeroUI's Alert gives its content wrapper `flex-grow` but no
+          // `min-w-0`, and a flex item defaults to min-width:auto — so a long
+          // unbroken URL inside refuses to shrink, pushes the alert wider than
+          // the card, and makes the whole page scroll sideways with the copy
+          // button off-screen. min-w-0 on both slots lets `truncate` work.
+          <Alert
+            color="success"
+            className="text-sm"
+            classNames={{ base: "min-w-0", mainWrapper: "min-w-0" }}
+          >
+            <div className="flex w-full min-w-0 items-center gap-2">
               <code className="min-w-0 flex-1 truncate text-xs">{guestLink.url}</code>
               <Button
                 isIconOnly
                 size="sm"
                 variant="flat"
+                className="shrink-0"
                 aria-label="Copy guest link"
-                onPress={() => void navigator.clipboard.writeText(guestLink.url)}
+                onPress={() => {
+                  void navigator.clipboard.writeText(guestLink.url);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
               >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
+            {copied && <p className="mt-1 text-xs font-medium">Link copied.</p>}
             <p className="mt-1 text-xs">
               This link works without a Forkd account. It only opens this one bill, only lets this
               one person pick their items, and expires. Send it directly — don&apos;t post it

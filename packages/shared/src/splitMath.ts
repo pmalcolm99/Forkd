@@ -418,6 +418,52 @@ export function formatCents(cents: number, currency = "USD", locale = "en-US"): 
   }
 }
 
+export interface MoneyDisplay {
+  /** True when amounts are being shown converted into the home currency. */
+  converting: boolean;
+  /** The code amounts are displayed in — home currency when converting. */
+  displayCurrency: string;
+  /** Receipt-currency cents → display string, converted if a rate applies. */
+  format(cents: number): string;
+  /** Receipt-currency cents → string, never converted. */
+  formatReceipt(cents: number): string;
+  /** Receipt-currency cents → home-currency cents, or null when not converting. */
+  toHomeCents(cents: number): number | null;
+}
+
+/**
+ * One place that decides how a bill's money is displayed.
+ *
+ * Every screen that shows a share has to answer the same question — is this
+ * receipt in a foreign currency, and if so do we show the converted figure? —
+ * and every screen answering it separately is how the Share tab ended up
+ * printing euros while the rest of the app printed dollars. Build one of these
+ * from the bill and format everything through it.
+ */
+export function moneyDisplay(opts: {
+  currency: string;
+  homeCurrency: string;
+  effectiveFxRate: number | null;
+  locale?: string;
+}): MoneyDisplay {
+  const rate = opts.effectiveFxRate;
+  const converting = rate != null && rate !== 1 && opts.currency !== opts.homeCurrency;
+  const toHomeCents = (cents: number) => (converting ? Math.round(cents * rate!) : null);
+
+  return {
+    converting,
+    displayCurrency: converting ? opts.homeCurrency : opts.currency,
+    toHomeCents,
+    formatReceipt: (cents) => formatCents(cents, opts.currency, opts.locale),
+    format: (cents) => {
+      const home = toHomeCents(cents);
+      return home == null
+        ? formatCents(cents, opts.currency, opts.locale)
+        : formatCents(home, opts.homeCurrency, opts.locale);
+    },
+  };
+}
+
 /* -------------------------------------------------------------------------- */
 /* Quantity expansion                                                          */
 /* -------------------------------------------------------------------------- */

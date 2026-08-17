@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Alert, Button, Card, CardBody, Switch } from "@heroui/react";
-import { Copy, QrCode, Share2 } from "lucide-react";
+import { Copy, Download, QrCode, Share2 } from "lucide-react";
 
 interface Props {
+  splitId: string;
   shareToken: string | null;
   shareEnabled: boolean;
   summaryText: string;
@@ -16,6 +17,7 @@ interface Props {
 
 /** Share controls: link, QR code for the table, and a group-chat text block. */
 export function SharePanel({
+  splitId,
   shareToken,
   shareEnabled,
   summaryText,
@@ -150,6 +152,28 @@ export function SharePanel({
             </details>
           </>
         )}
+
+        {/* Outside the sharing block on purpose: exporting your own record of a
+            meal has nothing to do with whether other people can open the link. */}
+        <div className="border-t border-divider pt-4">
+          <p className="font-medium">Export</p>
+          <p className="mb-3 text-sm text-default-500">
+            A spreadsheet of who owes what, with the totals in both currencies, the restaurant, the
+            date, and who paid. Opens in Excel, Numbers or Google Sheets.
+          </p>
+          {/* A real link, not a fetch-and-Blob: the browser streams it straight
+              to the downloads folder, and on a phone it goes to the share sheet. */}
+          <Button
+            as="a"
+            size="sm"
+            variant="flat"
+            href={`/api/v1/splits/${splitId}/export`}
+            download
+            startContent={<Download className="h-4 w-4" />}
+          >
+            Download CSV
+          </Button>
+        </div>
       </CardBody>
     </Card>
   );

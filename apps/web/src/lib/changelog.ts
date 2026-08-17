@@ -9,6 +9,26 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.2",
+    highlights: [
+      {
+        title: "Download a bill as a spreadsheet",
+        description:
+          "On a bill's Share tab, tap Download CSV. You get who owes what, the total in both currencies, the restaurant, the date, and who paid — opens in Excel, Numbers or Google Sheets.",
+      },
+      {
+        title: "Tidier bill screens",
+        description:
+          "Fixed a big empty gap on the Claim tab, amounts on the Share tab showing the wrong currency, and the guest-link box running off the side of the screen on phones.",
+      },
+      {
+        title: "Better guest pages on iPhone",
+        description:
+          "The bill name now stays at the top while you scroll, the columns no longer run into each other, and nothing hides behind the bar at the bottom.",
+      },
+    ],
+  },
+  {
     version: "1.2.0",
     highlights: [
       {

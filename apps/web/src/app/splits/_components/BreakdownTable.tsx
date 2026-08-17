@@ -1,7 +1,7 @@
 "use client";
 
 import { Chip } from "@heroui/react";
-import { formatCents, type SplitMathResult } from "@forkd/shared";
+import { moneyDisplay, type SplitMathResult } from "@forkd/shared";
 
 interface Props {
   math: SplitMathResult;
@@ -30,11 +30,9 @@ export function BreakdownTable({
   payerParticipantId,
   highlightParticipantId,
 }: Props) {
-  const converting = effectiveFxRate != null && effectiveFxRate !== 1 && currency !== homeCurrency;
-  const money = (cents: number) =>
-    converting
-      ? formatCents(Math.round(cents * effectiveFxRate!), homeCurrency)
-      : formatCents(cents, currency);
+  const display = moneyDisplay({ currency, homeCurrency, effectiveFxRate });
+  const converting = display.converting;
+  const money = display.format;
 
   const byId = new Map(math.participants.map((p) => [p.participantId, p]));
   const rows = participants

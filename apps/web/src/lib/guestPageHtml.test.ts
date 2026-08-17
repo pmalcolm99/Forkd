@@ -106,6 +106,41 @@ describe("renderGuestPage — self-containment", () => {
   });
 });
 
+describe("renderGuestPage — mobile layout", () => {
+  const html = renderGuestPage(makeData());
+
+  it("puts a gutter on the numeric columns so adjacent values can't run together", () => {
+    // Right-aligned nowrap cells with no left padding render as "$25.26$2.84".
+    expect(html).toMatch(/table\.share th\.num,table\.share td\.num\{[^}]*padding-left:\.75rem/);
+  });
+
+  it("carries a sticky header so the bill stays identified while scrolling", () => {
+    expect(html).toContain('<header class="top">');
+    expect(html).toMatch(/\.top\{[^}]*position:sticky/);
+    expect(html).toMatch(/\.top\{[^}]*top:0/);
+    // Opaque, because with viewport-fit=cover the page scrolls under the
+    // status bar and the clock would otherwise overlap the content.
+    expect(html).toMatch(/\.top\{[^}]*background:rgba\(10,10,10,\.97\)/);
+  });
+
+  it("insets the header for the notch rather than letting content sit under it", () => {
+    expect(html).toMatch(/\.top\{[^}]*padding:calc\(env\(safe-area-inset-top\)/);
+  });
+
+  it("reserves enough room at the bottom for the fixed bar", () => {
+    // The bar is two lines plus padding; 96px was short enough that the
+    // settle-up card sat behind it.
+    const m = /calc\(env\(safe-area-inset-bottom\) \+ (\d+)px\)/.exec(html);
+    expect(m).not.toBeNull();
+    expect(Number(m![1])).toBeGreaterThanOrEqual(130);
+  });
+
+  it("names the bill in the sticky header, escaped", () => {
+    const evil = renderGuestPage(makeData({ title: `<script>x</script>` }));
+    expect(evil).toMatch(/<p class="topttl">&lt;script&gt;/);
+  });
+});
+
 describe("renderGuestPage — XSS", () => {
   it("escapes a malicious item label", () => {
     const d = makeData();

@@ -21,7 +21,7 @@ import {
   Tabs,
 } from "@heroui/react";
 import { Check, Pencil, RefreshCw, Sparkles, Trash2 } from "lucide-react";
-import { TERMINAL_AI_STATUSES, formatCents } from "@forkd/shared";
+import { TERMINAL_AI_STATUSES, formatCents, moneyDisplay } from "@forkd/shared";
 import { trpc } from "@/lib/trpc/client";
 import { receiptUrl } from "@/lib/receiptUrl";
 import { buildSplitSummary } from "@/lib/splitSummary";
@@ -136,6 +136,14 @@ export function SplitDetail({ splitId, justScanned }: { splitId: string; justSca
   const scanning = split.aiStatus === "queued" || split.aiStatus === "processing";
   const payer = split.participants.find((p) => p.id === split.paidByParticipantId);
 
+  // Every amount on this page goes through here, so a foreign-currency bill
+  // can't show converted figures on one tab and raw receipt figures on another.
+  const display = moneyDisplay({
+    currency: split.currency,
+    homeCurrency: split.homeCurrency,
+    effectiveFxRate: split.effectiveFxRate,
+  });
+
   const totals: TotalsDraft = {
     taxCents: split.taxCents,
     taxIncluded: split.taxIncluded,
@@ -235,8 +243,11 @@ export function SplitDetail({ splitId, justScanned }: { splitId: string; justSca
         <Tab key="share" title="Share" />
       </Tabs>
 
+      {/* pb-40 clears the ClaimBoard's fixed running-total bar. It lives on the
+          tab wrapper, not inside ClaimBoard, so the gap lands after the last
+          card rather than between the item list and the breakdown. */}
       {tab === "claim" && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 pb-40">
           {myParticipant ? (
             <ClaimBoard
               items={split.items}
@@ -591,6 +602,7 @@ export function SplitDetail({ splitId, justScanned }: { splitId: string; justSca
       {tab === "share" && (
         <div className="flex flex-col gap-4">
           <SharePanel
+            splitId={splitId}
             shareToken={split.shareToken}
             shareEnabled={split.shareEnabled}
             summaryText={summary}
@@ -600,7 +612,12 @@ export function SplitDetail({ splitId, justScanned }: { splitId: string; justSca
           />
           <Card>
             <CardBody className="p-4">
-              <p className="mb-3 font-medium">Who still owes</p>
+              <p className="mb-1 font-medium">Who still owes</p>
+              {display.converting && (
+                <p className="mb-3 text-xs text-default-400">
+                  Shown in {split.homeCurrency}; the receipt is in {split.currency}.
+                </p>
+              )}
               <div className="flex flex-col gap-2">
                 {split.participants.map((p) => {
                   const share = split.math.participants.find((m) => m.participantId === p.id);
@@ -615,9 +632,7 @@ export function SplitDetail({ splitId, justScanned }: { splitId: string; justSca
                           </Chip>
                         )}
                       </span>
-                      <span className="tabular-nums">
-                        {formatCents(share.totalCents, split.currency)}
-                      </span>
+                      <span className="tabular-nums">{display.format(share.totalCents)}</span>
                     </div>
                   );
                 })}

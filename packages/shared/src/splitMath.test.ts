@@ -9,6 +9,7 @@ import {
   isExpandable,
   effectiveFxRate,
   formatCents,
+  moneyDisplay,
   moneyStringToCents,
   type SplitMathInput,
 } from "./splitMath";
@@ -540,5 +541,50 @@ describe("money parsing and formatting", () => {
   it("falls back rather than throwing on a malformed currency code", () => {
     // Intl throws RangeError for anything that isn't three letters.
     expect(formatCents(1250, "US")).toBe("12.50 US");
+  });
+});
+
+describe("moneyDisplay", () => {
+  const eur = { currency: "EUR", homeCurrency: "USD", effectiveFxRate: 1.16 };
+
+  it("converts into the home currency when a rate applies", () => {
+    const d = moneyDisplay(eur);
+    expect(d.converting).toBe(true);
+    expect(d.displayCurrency).toBe("USD");
+    expect(d.toHomeCents(1000)).toBe(1160);
+    expect(d.format(1000)).toContain("11.60");
+  });
+
+  it("still exposes the untouched receipt figure", () => {
+    const d = moneyDisplay(eur);
+    expect(d.formatReceipt(1000)).toContain("10.00");
+    expect(d.formatReceipt(1000)).not.toContain("11.60");
+  });
+
+  // These three are the conditions the old copy-pasted checks disagreed on —
+  // one screen printed euros while every other screen printed dollars.
+  it("does not convert when the rate is exactly 1", () => {
+    const d = moneyDisplay({ ...eur, effectiveFxRate: 1 });
+    expect(d.converting).toBe(false);
+    expect(d.toHomeCents(1000)).toBeNull();
+    expect(d.format(1000)).toBe(d.formatReceipt(1000));
+  });
+
+  it("does not convert when the rate is unknown", () => {
+    const d = moneyDisplay({ ...eur, effectiveFxRate: null });
+    expect(d.converting).toBe(false);
+    expect(d.format(1000)).toBe(d.formatReceipt(1000));
+  });
+
+  it("does not convert when the receipt is already in the home currency", () => {
+    const d = moneyDisplay({ currency: "USD", homeCurrency: "USD", effectiveFxRate: 1.16 });
+    expect(d.converting).toBe(false);
+    expect(d.displayCurrency).toBe("USD");
+    expect(d.format(1000)).toContain("10.00");
+  });
+
+  it("rounds each amount to a whole cent", () => {
+    const d = moneyDisplay({ ...eur, effectiveFxRate: 1.155 });
+    expect(d.toHomeCents(333)).toBe(385); // 384.615 → 385
   });
 });

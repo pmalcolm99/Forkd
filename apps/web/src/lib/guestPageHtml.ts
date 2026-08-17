@@ -1,4 +1,4 @@
-import { formatCents, type SplitMathResult } from "@forkd/shared";
+import { formatCents, moneyDisplay, type SplitMathResult } from "@forkd/shared";
 
 /**
  * Hand-rendered HTML for the guest bill page.
@@ -81,10 +81,35 @@ body{
   margin:0;background:#0a0a0a;color:#ededed;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   font-size:16px;line-height:1.5;
-  padding:max(env(safe-area-inset-top),16px) max(env(safe-area-inset-right),16px)
-          calc(env(safe-area-inset-bottom) + 96px) max(env(safe-area-inset-left),16px);
+  /* No top padding: the sticky header owns the top of the page, including the
+     safe-area inset. Bottom clearance is generous because the fixed bar is two
+     lines tall and there is no JavaScript to measure it — running short hides
+     the settle-up card behind the bar. */
+  padding:0 max(env(safe-area-inset-right),16px)
+          calc(env(safe-area-inset-bottom) + 140px) max(env(safe-area-inset-left),16px);
 }
 .wrap{max-width:34rem;margin:0 auto}
+
+/* Sticky header. With viewport-fit=cover the page scrolls under the status bar
+   and the Dynamic Island, so an opaque bar has to sit there — otherwise the
+   clock overlaps whatever scrolls past. It doubles as context: on a long
+   receipt the guest can always see which bill they are ticking. */
+.top{
+  position:sticky;top:0;z-index:20;background:rgba(10,10,10,.97);
+  backdrop-filter:saturate(180%) blur(12px);
+  -webkit-backdrop-filter:saturate(180%) blur(12px);
+  border-bottom:1px solid rgba(255,255,255,.1);
+  margin:0 calc(-1 * max(env(safe-area-inset-right),16px)) 1rem
+         calc(-1 * max(env(safe-area-inset-left),16px));
+  padding:calc(env(safe-area-inset-top) + .6rem) max(env(safe-area-inset-right),16px) .6rem
+          max(env(safe-area-inset-left),16px);
+}
+.topinner{max-width:34rem;margin:0 auto;display:flex;align-items:baseline;gap:.5rem}
+.topinner .brand{margin:0;flex:0 0 auto}
+.topttl{
+  margin:0;font-size:.9rem;font-weight:600;color:#d4d4d8;min-width:0;flex:1 1 auto;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;
+}
 h1{font-size:1.4rem;line-height:1.25;margin:0 0 .25rem;overflow-wrap:anywhere}
 .sub{color:#a1a1aa;font-size:.875rem;margin:0 0 1.25rem;overflow-wrap:anywhere}
 .brand{color:#4aab7c;font-weight:700;font-size:1.05rem;margin:0 0 1rem}
@@ -116,10 +141,19 @@ li.item input[type=checkbox]:focus-visible{outline:3px solid #4d9970;outline-off
 .tag{display:inline-block;background:#262626;border-radius:1rem;padding:.08rem .5rem;margin:.15rem .25rem 0 0;font-size:.75rem}
 .tag.split{background:#15402b;color:#a3d9bf}
 
-table.share{width:100%;border-collapse:collapse;font-size:.875rem}
+table.share{width:100%;border-collapse:collapse;font-size:.875rem;table-layout:fixed}
 table.share th{text-align:left;font-weight:500;color:#a1a1aa;font-size:.7rem;text-transform:uppercase;padding:0 0 .4rem}
-table.share td{padding:.45rem 0;border-top:1px solid rgba(255,255,255,.08);vertical-align:top}
-table.share td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.share td{padding:.45rem 0;border-top:1px solid rgba(255,255,255,.08);vertical-align:top;overflow-wrap:anywhere}
+/* Numeric columns are right-aligned and nowrap, so with no left padding the
+   values in adjacent columns butt straight up against each other and read as
+   one number ("$25.26$2.84"). The gutter has to be on the left, because the
+   right edge is what the alignment pins them to. */
+table.share th.num,table.share td.num{
+  text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;
+  padding-left:.75rem;overflow-wrap:normal;
+}
+/* Give the name column the slack and keep the money columns to their content. */
+table.share th:first-child,table.share td:first-child{width:38%}
 tr.me{background:rgba(61,122,82,.14)}
 tr.unclaimed td{color:#f3ddb0}
 tfoot td{font-weight:700;border-top:2px solid rgba(255,255,255,.18)}
@@ -157,12 +191,13 @@ function fmtDate(d: Date | string | null): string | null {
 
 /** Render the complete guest page document. */
 export function renderGuestPage(d: GuestPageData): string {
-  const converting =
-    d.effectiveFxRate != null && d.effectiveFxRate !== 1 && d.currency !== d.homeCurrency;
-  const money = (cents: number): string =>
-    converting
-      ? formatCents(Math.round(cents * d.effectiveFxRate!), d.homeCurrency)
-      : formatCents(cents, d.currency);
+  const display = moneyDisplay({
+    currency: d.currency,
+    homeCurrency: d.homeCurrency,
+    effectiveFxRate: d.effectiveFxRate,
+  });
+  const converting = display.converting;
+  const money = display.format;
 
   const nameById = new Map(d.participants.map((p) => [p.id, p.displayName]));
   const shareById = new Map(d.math.participants.map((p) => [p.participantId, p]));
@@ -292,8 +327,13 @@ export function renderGuestPage(d: GuestPageData): string {
 <style>${STYLES}</style>
 </head>
 <body>
+<header class="top">
+  <div class="topinner">
+    <p class="brand">Forkd</p>
+    <p class="topttl">${esc(d.title)}</p>
+  </div>
+</header>
 <div class="wrap">
-  <p class="brand">Forkd</p>
   ${flash}
   <h1>${esc(d.title)}</h1>
   <p class="sub">${esc(subtitle)}</p>
@@ -364,7 +404,13 @@ export function renderGuestMessage(heading: string, body: string): string {
 <meta name="color-scheme" content="dark">
 <title>Forkd</title>
 <style>${STYLES}
-body{display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding-bottom:16px}
+/* This page has no sticky header and no fixed bar, so it takes its own insets
+   back — the shared rule zeroes the top and reserves 140px at the bottom. */
+body{
+  display:flex;align-items:center;justify-content:center;min-height:100svh;text-align:center;
+  padding-top:calc(env(safe-area-inset-top) + 16px);
+  padding-bottom:calc(env(safe-area-inset-bottom) + 16px);
+}
 </style>
 </head>
 <body><div class="wrap">
