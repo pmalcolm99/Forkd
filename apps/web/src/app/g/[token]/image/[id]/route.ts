@@ -8,30 +8,27 @@ import {
   tooManyRequests,
 } from "@/lib/guestAccess";
 
-/** Serve a receipt image to a guest, authorised by token alone. */
+export const dynamic = "force-dynamic";
+
+/**
+ * Receipt photo for a guest. Lives under /g/ so the entire guest surface is one
+ * path prefix — nothing else has to be opened up at the edge.
+ */
 export async function GET(
   req: Request,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ token: string; id: string }> }
 ): Promise<Response> {
   const ip = clientIp(req);
   if (!guestRateLimit(ip)) return tooManyRequests();
 
-  const token = new URL(req.url).searchParams.get("token");
-  if (!token) {
-    return noteGuestFailure(ip) ? guestNotFound() : tooManyRequests();
-  }
-
+  const { token, id } = await params;
   const resolved = await resolveGuestToken(token);
   if (!resolved.ok) {
     return noteGuestFailure(ip) ? guestNotFound() : tooManyRequests();
   }
 
-  const { path: segments } = await params;
-  const image = await resolveReceiptImage(segments);
+  const image = await resolveReceiptImage(["splits", resolved.ctx.splitId, `${id}.webp`]);
   if (!image) return guestNotFound();
-
-  // The token is scoped to one bill; it cannot fetch another bill's photos.
-  if (image.splitId !== resolved.ctx.splitId) return guestNotFound();
   // Guests are "other people" for the hide-images toggle, always.
   if (image.hideImagesFromOthers) return guestNotFound();
 

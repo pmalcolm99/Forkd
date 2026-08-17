@@ -4,16 +4,7 @@ export function receiptUrl(splitId: string, imageId: string, kind: "full" | "thu
   return `/api/v1/receipts/splits/${splitId}/${imageId}${suffix}.webp`;
 }
 
-/**
- * Receipt image URL for a guest link. Goes through the guest endpoint, which
- * sits outside Cloudflare Access and authorises on the token alone.
- */
-export function guestReceiptUrl(
-  splitId: string,
-  imageId: string,
-  kind: "full" | "thumb",
-  token: string
-): string {
-  const suffix = kind === "thumb" ? "_thumb" : "";
-  return `/api/v1/guest/image/splits/${splitId}/${imageId}${suffix}.webp?token=${encodeURIComponent(token)}`;
-}
+// Guest receipt images are not built here. The guest page is served as a
+// self-contained document from /g/<token>, and its images are addressed
+// relative to that same prefix (/g/<token>/image/<id>) so the whole public
+// surface stays under one path — see apps/web/src/lib/guestPageHtml.ts.

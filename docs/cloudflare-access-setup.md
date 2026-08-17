@@ -206,13 +206,11 @@ Create a **new application** (don't edit the main Forkd one):
 1. **Add an application** → **Self-hosted**
 2. **Application name:** `Forkd guest links`
 3. **Session Duration:** any value (it won't be used)
-4. **Application domain** — add these entries:
+4. **Application domain:**
 
-   | Subdomain | Domain                | Path             |
-   | --------- | --------------------- | ---------------- |
-   | `forkd`   | `familyrecipebook.us` | `g/*`            |
-   | `forkd`   | `familyrecipebook.us` | `api/v1/guest/*` |
-   | `forkd`   | `familyrecipebook.us` | `_next/static/*` |
+   | Subdomain | Domain                | Path  |
+   | --------- | --------------------- | ----- |
+   | `forkd`   | `familyrecipebook.us` | `g/*` |
 
 5. **Next** → add a policy:
    - **Policy name:** `Public bypass`
@@ -220,32 +218,32 @@ Create a **new application** (don't edit the main Forkd one):
    - **Include:** _Everyone_
 6. Save.
 
-Cloudflare matches the more specific application first, so the rest of Forkd stays
-gated by your existing policy. Anything not under those prefixes is unaffected.
+That single prefix is the whole guest surface. The page, the form it posts to,
+and the receipt photos all live under `/g/`, and every response is a complete,
+self-contained HTML document with its styling inline and no JavaScript. Nothing
+from `/_next/static/` — no app bundle, no stylesheet — is involved, so none of
+it has to be exposed. Cloudflare matches the more specific application first,
+so the rest of Forkd stays gated by your existing policy.
 
-> ⚠️ **`_next/static/*` is not optional — leave it out and guest links are broken.**
-> The guest page is a normal web page: it needs roughly twenty JavaScript chunks and
-> a stylesheet, all served from `/_next/static/`. If those stay behind Access, a
-> guest receives the HTML and nothing else, and sees an unstyled white page showing
-> only the header. It will appear to work for _you_, because your browser already
-> holds a `CF_Authorization` cookie from signing in — the breakage only shows up on
-> a device that has never authenticated. Test in a private window.
->
-> Exposing `/_next/static/*` is safe: it is compiled front-end build output with no
-> user data in it, and this repository is public on GitHub, so the source is already
-> readable by anyone. Page HTML and RSC payloads are served from the page routes,
-> which remain gated — only the static bundle is opened up.
+> This is deliberate. An earlier design used a normal Next.js page here, which
+> dragged roughly twenty JavaScript chunks and a stylesheet along with it. Those
+> stayed behind Access, so a guest received the page HTML and nothing else — an
+> unstyled white screen showing only the header — while it looked perfectly fine
+> to anyone whose browser already held a `CF_Authorization` cookie. Widening the
+> bypass to cover `/_next/static/*` would have fixed it, but at the cost of
+> exposing the whole front-end bundle. Making the page self-contained keeps the
+> public surface to one prefix instead.
 
-### Step 1b — stop Cloudflare challenging the guest paths
+### Step 1b — stop Cloudflare challenging the guest path
 
 **Where:** your domain → **Security** → **Bots** (and **Security** → **WAF**)
 
 Once a path bypasses Access it becomes ordinary anonymous traffic, which means
-Cloudflare's bot protection applies to it. If **Bot Fight Mode** is on, requests to
-`/g/*` and `/api/v1/guest/*` come back as `403` with a `cf-mitigated: challenge`
-header and a "Just a moment…" interstitial. Most desktop browsers solve that
-silently; Safari on iOS — especially with iCloud Private Relay enabled — often does
-not, and the guest is stuck.
+Cloudflare's bot protection applies to it. If **Bot Fight Mode** is on, requests
+to `/g/*` come back as `403` with a `cf-mitigated: challenge` header and a
+"Just a moment…" interstitial. Most desktop browsers solve that silently; Safari
+on iOS — especially with iCloud Private Relay enabled — often does not, and the
+guest is stuck.
 
 Check for it with:
 
@@ -255,12 +253,12 @@ curl -s -D - -o /dev/null "https://forkd.familyrecipebook.us/g/anytoken" | grep 
 
 Any output means a challenge is being issued. To fix:
 
-- **Free plan:** Bot Fight Mode is a single global switch with no per-path exclusions
-  — turn it off (Security → Bots → Bot Fight Mode). Cloudflare Access still protects
-  every other route, so this does not expose the app.
-- **Pro and above:** keep Super Bot Fight Mode on and add a **WAF custom rule** with
-  action **Skip** → _All remaining custom rules_ and _Super Bot Fight Mode_, matching
-  `http.request.uri.path contains "/g/" or http.request.uri.path contains "/api/v1/guest/"`.
+- **Free plan:** Bot Fight Mode is a single global switch with no per-path
+  exclusions — turn it off (Security → Bots → Bot Fight Mode). Cloudflare Access
+  still protects every other route, so this does not expose the app.
+- **Pro and above:** keep Super Bot Fight Mode on and add a **WAF custom rule**
+  with action **Skip** → _Super Bot Fight Mode_, matching
+  `http.request.uri.path contains "/g/"`.
 
 ### Step 2 — turn the setting on in Forkd
 
@@ -274,29 +272,33 @@ two controls are independent on purpose, so neither one alone opens anything.
 
 ### Step 3 — verify
 
-Do this in a **private/incognito window**, or on a device that has never signed in.
-Testing in your normal browser proves nothing: it already holds an Access cookie, so
-everything will look fine even when it is broken for everyone else.
+Do this in a **private/incognito window**, or on a device that has never signed
+in. Testing in your normal browser proves nothing: it already holds an Access
+cookie, so everything will look fine even when it is broken for everyone else.
 
 ```bash
-# The guest page itself must return 200 — not 302 (Access) and not 403 (bot challenge).
+# The guest page must return 200 — not 302 (Access) and not 403 (bot challenge).
 curl -s -o /dev/null -w '%{http_code}\n' https://forkd.familyrecipebook.us/g/anytoken
 
-# The static bundle must also return 200, or the page renders blank and unstyled.
-curl -s -o /dev/null -w '%{http_code}\n' https://forkd.familyrecipebook.us/_next/static/chunks/main-app.js
-
-# No challenge header on the guest paths.
+# ...and no challenge header on it.
 curl -s -D - -o /dev/null https://forkd.familyrecipebook.us/g/anytoken | grep -i cf-mitigated
 
 # The rest of the app must STILL be gated — this one should be 302.
 curl -s -o /dev/null -w '%{http_code}\n' https://forkd.familyrecipebook.us/restaurants
+
+# And the app bundle must STAY gated — 302 here is correct and expected.
+curl -s -o /dev/null -w '%{http_code}\n' https://forkd.familyrecipebook.us/_next/static/chunks/main-app.js
 ```
 
-Expected: `200`, `200`, no `cf-mitigated` line, `302`.
+Expected: `200`, no `cf-mitigated` line, `302`, `302`.
 
-If the first is `302`, the Bypass policy path isn't matching. If it's `403` with
-`cf-mitigated`, see Step 1b. If the last one is `200`, **remove the Bypass policy
-immediately** — its paths are too broad and the whole app is exposed.
+An unknown token returns a styled "this link isn't active" page, which is a
+`200`-shaped success for this check — you are testing that Cloudflare lets the
+request through, not that the token is real.
+
+If the first is `302`, the Bypass policy path isn't matching. If it is `403`
+with `cf-mitigated`, see Step 1b. If the third returns `200`, **remove the
+Bypass policy immediately** — its path is too broad and the app is exposed.
 
 ### Turning it back off
 

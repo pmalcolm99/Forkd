@@ -70,25 +70,23 @@ export function BillsConfigForm({ initialFields, isOwner }: Props) {
             </p>
             <p className="mt-2 text-sm">
               Turning this on is <strong>not enough on its own</strong>. You must also add a{" "}
-              <strong>Bypass</strong> policy in the Cloudflare Access dashboard for all three of
-              these paths, or guests will be stopped at the edge before Forkd ever sees them:
+              <strong>Bypass</strong> policy in the Cloudflare Access dashboard for this path, or
+              guests will be stopped at the edge before Forkd ever sees them:
             </p>
             <pre className="mt-2 overflow-x-auto rounded bg-content2 p-2 text-xs">
-              {`<your-domain>/g/*\n<your-domain>/api/v1/guest/*\n<your-domain>/_next/static/*`}
+              {`<your-domain>/g/*`}
             </pre>
             <p className="mt-2 text-sm">
-              <strong>Do not omit the last one.</strong> The guest page needs the app&apos;s
-              JavaScript and stylesheet, which all live under <code>/_next/static/</code>. Without
-              it a guest gets the page HTML and nothing else — an unstyled white screen showing only
-              the header. It will look fine to you, because your browser already holds a Cloudflare
-              Access cookie; the breakage only appears on a device that has never signed in. Always
-              test a guest link in a private window.
+              That one prefix is the entire guest surface — the page, the form it posts to, and the
+              receipt photos. Guest pages are self-contained HTML with no JavaScript, so none of the
+              app&apos;s bundle needs to be exposed alongside them.
             </p>
             <p className="mt-2 text-sm">
-              Also check that Cloudflare isn&apos;t <em>challenging</em> the guest paths. Once a
-              path bypasses Access it becomes anonymous traffic, so Bot Fight Mode applies to it —
-              which Safari on iOS frequently fails to satisfy. Full steps, including how to check,
-              are in <code>docs/cloudflare-access-setup.md</code>.
+              Also check that Cloudflare isn&apos;t <em>challenging</em> that path. Once it bypasses
+              Access it becomes anonymous traffic, so Bot Fight Mode applies — which Safari on iOS
+              frequently fails to satisfy. Test a guest link in a private window; your own browser
+              already holds an Access cookie and will look fine either way. Steps are in{" "}
+              <code>docs/cloudflare-access-setup.md</code>.
             </p>
             <p className="mt-2 text-sm">
               Leave this off if you only ever split bills with people who already have Forkd

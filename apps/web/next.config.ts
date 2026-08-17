@@ -30,21 +30,31 @@ const nextConfig: NextConfig = {
       { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
     ];
 
-    // Guest bill-split paths carry a capability token in the URL. `no-referrer`
+    // The guest bill-split path carries a capability token in the URL. `no-referrer`
     // guarantees that token can never ride out in a Referer header, rather than
     // relying on the browser's default policy being strict enough. X-Robots-Tag
-    // is set here as well as in the page's own metadata so a crawler that only
-    // reads headers (or issues a HEAD) still sees it.
+    // keeps it out of search indexes even for a crawler that only reads headers.
+    //
+    // The CSP here is much stricter than the baseline because it can be: guest
+    // pages are self-contained HTML with inline CSS and no JavaScript at all, so
+    // `default-src 'none'` costs nothing and turns any future injected <script>
+    // into a no-op. Note these headers *replace* whatever a route handler sets —
+    // Next applies config headers last — so this is the only place the guest CSP
+    // can be defined.
     const guest = [
-      ...baseline.filter((h) => h.key !== "Referrer-Policy"),
+      ...baseline.filter((h) => h.key !== "Referrer-Policy" && h.key !== "Content-Security-Policy"),
       { key: "Referrer-Policy", value: "no-referrer" },
       { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet" },
+      {
+        key: "Content-Security-Policy",
+        value:
+          "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+      },
     ];
 
     return [
       { source: "/:path*", headers: baseline },
       { source: "/g/:path*", headers: guest },
-      { source: "/api/v1/guest/:path*", headers: guest },
     ];
   },
   webpack: (config, { isServer }) => {

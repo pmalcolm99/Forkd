@@ -53,7 +53,9 @@ export const CONFIG_KEYS = [
   {
     // Guest links are the only part of Forkd reachable without Cloudflare
     // Access, so they stay off until the operator has also added a Bypass
-    // policy for /g/* and /api/v1/guest/* in the Cloudflare dashboard.
+    // policy for /g/* in the Cloudflare dashboard. That single prefix is the
+    // whole public surface: guest pages are self-contained HTML, so none of
+    // the app bundle needs exposing alongside them.
     // Owner-only: this is a security posture change, not a preference.
     key: "receipts.guest_links_enabled",
     isSecret: false,
