@@ -40,6 +40,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
+  // Guest bill-split links (/g/* and /api/v1/guest/*) are deliberately outside
+  // the Cloudflare Access gate — that is the whole point of them. They are
+  // inert unless the operator switches `receipts.guest_links_enabled` on, and
+  // they authorise on a 32-byte capability token scoped to one participant on
+  // one bill. See docs/cloudflare-access-setup.md.
   matcher: [
     // Protect all routes except:
     //   _next/  — all Next.js internals (static, image, HMR, etc.)
@@ -47,6 +52,6 @@ export const config = {
     //   sw.js, offline.html, icon*.png / apple-icon*.png — PWA assets the browser
     //     must fetch without an app session (install, icon, offline shell)
     //   api/v1/health — Docker healthcheck (responds to both GET and HEAD)
-    "/((?!_next/|favicon\\.ico|manifest\\.(?:json|webmanifest)|robots\\.txt|sw\\.js|offline\\.html|(?:apple-)?icon[\\w-]*\\.png|api/v1/health).*)",
+    "/((?!_next/|favicon\\.ico|manifest\\.(?:json|webmanifest)|robots\\.txt|sw\\.js|offline\\.html|(?:apple-)?icon[\\w-]*\\.png|api/v1/health|g/|api/v1/guest/).*)",
   ],
 };

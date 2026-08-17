@@ -15,7 +15,7 @@ import {
   ModalFooter,
   ModalHeader,
 } from "@heroui/react";
-import { ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, Receipt, Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc/client";
 
 interface Props {
@@ -48,6 +48,7 @@ export function RestaurantActionsMenu({ id, canDelete }: Props) {
 
   const items: ActionItem[] = [
     { key: "edit", label: "Edit details", icon: <Pencil className="h-4 w-4" /> },
+    { key: "split", label: "Split a bill here", icon: <Receipt className="h-4 w-4" /> },
     ...(canDelete
       ? [{ key: "delete", label: "Delete", danger: true, icon: <Trash2 className="h-4 w-4" /> }]
       : []),
@@ -66,6 +67,7 @@ export function RestaurantActionsMenu({ id, canDelete }: Props) {
           items={items}
           onAction={(key) => {
             if (key === "edit") router.push(`/restaurants/${id}/edit`);
+            else if (key === "split") router.push(`/splits/new?restaurantId=${id}`);
             else if (key === "delete") {
               setError(null);
               setOpen(true);

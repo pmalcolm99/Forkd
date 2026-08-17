@@ -1,6 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter, createTRPCContext } from "@forkd/api";
 import { deletePhotoFiles } from "@/lib/photoStorage";
+import { deleteReceiptFiles } from "@/lib/receiptStorage";
 import {
   clearOrphanedVideos,
   deleteUploadFile,
@@ -25,6 +26,7 @@ const handler = (req: Request) =>
         req,
         fileStore: {
           deletePhotoFiles,
+          deleteReceiptFiles,
           getStorageUsage,
           listAllUploadFiles,
           deleteUploadFile,

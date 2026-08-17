@@ -5,7 +5,8 @@
 export {
   importQueue,
   backupQueue,
+  receiptQueue,
   SCHEDULED_BACKUP_JOB_NAME,
   reconcileScheduledBackup,
 } from "./queue";
-export type { ImportJobData, BackupJobData } from "./queue";
+export type { ImportJobData, BackupJobData, ReceiptJobData } from "./queue";

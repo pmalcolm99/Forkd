@@ -155,3 +155,98 @@ If you see "Too many redirects" (`ERR_TOO_MANY_REDIRECTS`) after authentication:
 2. If the cookie is absent: the Cloudflare edge may be caching the response. Add the Cache Rule exception above.
 3. If the cookie is present but disappears on the next request: check that no Transform Rule strips it.
 4. Check webapp logs: `docker compose logs webapp | grep "CF Access"` — if you see the provisioning message repeated many times, the session is being re-created on every visit, which means the cookie isn't reaching the session lookup.
+
+---
+
+## Optional — guest links for bill splitting (v1.2.0+)
+
+**Read this section before turning guest links on.** It is the one place where Forkd is
+deliberately reachable without Cloudflare Access, and it needs a change on the Cloudflare side
+as well as a setting in the app.
+
+### What guest links are
+
+When you split a restaurant bill, everyone who has a Forkd account can open the normal share link
+(`/s/<token>`) — Cloudflare Access authenticates them as usual, nothing special is needed.
+
+A **guest link** (`/g/<token>`) is for the people at the table who don't have Forkd accounts: a
+friend, a colleague, your kid. It lets exactly one named guest open exactly one bill and tick the
+items they ordered.
+
+### The trade-off, stated plainly
+
+Cloudflare Access sits in front of the whole app. A guest with a secret link would be stopped at
+the edge before Forkd ever sees the request — so making guest links work means **punching a hole
+through Access for two path prefixes**. Once you do that, those two paths are reachable by anyone
+on the internet who has the URL.
+
+What limits the blast radius:
+
+- A guest token is **32 random bytes** (256 bits). It is not guessable.
+- A token is a **capability, not an identity**: it maps to one participant on one bill. It can
+  read that bill and write that one person's item picks and paid flag. Nothing else.
+- Tokens **expire** (30 days by default) and can be **revoked individually** from the People tab.
+- The guest endpoints **never return an email address**, the bill creator's identity, or the
+  family share token.
+- Every rejection — bad token, expired token, deleted bill, feature disabled — returns an
+  identical `404`, so a caller learns nothing from probing.
+- Requests are rate-limited per IP + token, on top of Cloudflare's own edge limits.
+- tRPC is **not** exposed. The guest endpoints are four narrow REST handlers written for this
+  purpose; the entire tRPC router stays behind Access.
+
+If you only ever split bills with people who already have Forkd accounts, **leave this off**. The
+rest of the feature works fully without it.
+
+### Step 1 — add a Bypass policy in Cloudflare
+
+**Where:** Zero Trust dashboard → **Access** → **Applications**
+
+Create a **new application** (don't edit the main Forkd one):
+
+1. **Add an application** → **Self-hosted**
+2. **Application name:** `Forkd guest links`
+3. **Session Duration:** any value (it won't be used)
+4. **Application domain** — add two entries:
+
+   | Subdomain | Domain                | Path             |
+   | --------- | --------------------- | ---------------- |
+   | `forkd`   | `familyrecipebook.us` | `g/*`            |
+   | `forkd`   | `familyrecipebook.us` | `api/v1/guest/*` |
+
+5. **Next** → add a policy:
+   - **Policy name:** `Public bypass`
+   - **Action:** **Bypass**
+   - **Include:** _Everyone_
+6. Save.
+
+Cloudflare matches the more specific application first, so the rest of Forkd stays gated by your
+existing policy. Anything not under those two prefixes is unaffected.
+
+### Step 2 — turn the setting on in Forkd
+
+**Where:** Forkd → **Admin** → **Bills** (owner only)
+
+Set `receipts.guest_links_enabled` to `true`. Optionally adjust
+`receipts.guest_link_ttl_days` (default `30`).
+
+Until this is `true`, the guest endpoints return `404` even if the Cloudflare bypass exists — the
+two controls are independent on purpose, so neither one alone opens anything.
+
+### Step 3 — verify
+
+```bash
+# Should be 404 (feature off, or no such token) — never a Cloudflare login page.
+curl -s -o /dev/null -w '%{http_code}\n' https://forkd.familyrecipebook.us/api/v1/guest/split?token=aaaaaaaaaaaaaaaaaaaaaaaa
+
+# Should still redirect to Cloudflare Access — the main app must stay gated.
+curl -s -o /dev/null -w '%{http_code}\n' https://forkd.familyrecipebook.us/restaurants
+```
+
+If the first command returns a Cloudflare login page instead of `404`, the Bypass policy path
+isn't matching. If the second returns `200` without authenticating, **remove the Bypass policy
+immediately** — the paths are too broad.
+
+### Turning it back off
+
+Set `receipts.guest_links_enabled` to `false` in Admin → Bills. Existing guest links stop working
+at once. Removing the Cloudflare application as well is belt-and-braces.

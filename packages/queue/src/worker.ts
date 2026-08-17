@@ -205,3 +205,4 @@ export function startImportWorker(): void {
 // Backup/restore worker lives here too so instrumentation.ts can start everything
 // from the single "@forkd/queue/worker" entrypoint.
 export { startBackupWorker } from "./backupWorker";
+export { startReceiptWorker } from "./receiptWorker";

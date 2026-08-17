@@ -13,6 +13,7 @@ const BASE_TABS = [
   { key: "transcription", label: "Transcription", href: "/admin/transcription" },
   { key: "google-places", label: "Google Places", href: "/admin/google-places" },
   { key: "map", label: "Map", href: "/admin/map" },
+  { key: "bills", label: "Bills", href: "/admin/bills" },
   { key: "storage", label: "Storage", href: "/admin/storage" },
 ] as const;
 

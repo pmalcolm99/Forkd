@@ -1,0 +1,1 @@
+ALTER TABLE "bill_splits" ADD COLUMN "tax_included" boolean DEFAULT false NOT NULL;

@@ -45,14 +45,22 @@ export function Header({ userName, isAdmin, isDev }: Props) {
     setTimeout(() => window.location.reload(), 250);
   }
 
-  const navLinks = [
-    {
-      href: "/restaurants",
-      label: "Restaurants",
-      isActive: pathname === "/" || pathname.startsWith("/restaurants"),
-    },
-    { href: "/map", label: "Map", isActive: pathname === "/map" },
-  ];
+  // Guest bill-split links are reachable without a Forkd account, so the app
+  // nav is hidden there — every link would just bounce them into Cloudflare
+  // Access, which is confusing for someone who was only sent a receipt.
+  const isGuestRoute = pathname.startsWith("/g/");
+
+  const navLinks = isGuestRoute
+    ? []
+    : [
+        {
+          href: "/restaurants",
+          label: "Restaurants",
+          isActive: pathname === "/" || pathname.startsWith("/restaurants"),
+        },
+        { href: "/map", label: "Map", isActive: pathname === "/map" },
+        { href: "/splits", label: "Bills", isActive: pathname.startsWith("/splits") },
+      ];
 
   const dropdownItems: MenuItem[] = [
     { key: "profile", label: "Profile", href: "/profile" },
@@ -76,14 +84,20 @@ export function Header({ userName, isAdmin, isDev }: Props) {
       }}
     >
       <NavbarContent>
-        <NavbarMenuToggle
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-          className="sm:hidden"
-        />
+        {!isGuestRoute && (
+          <NavbarMenuToggle
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            className="sm:hidden"
+          />
+        )}
         <NavbarBrand>
-          <Link as={NextLink} href="/restaurants" className="text-xl font-bold" color="primary">
-            Forkd
-          </Link>
+          {isGuestRoute ? (
+            <span className="text-xl font-bold text-primary">Forkd</span>
+          ) : (
+            <Link as={NextLink} href="/restaurants" className="text-xl font-bold" color="primary">
+              Forkd
+            </Link>
+          )}
         </NavbarBrand>
       </NavbarContent>
 
@@ -120,7 +134,7 @@ export function Header({ userName, isAdmin, isDev }: Props) {
         </NavbarItem>
         {/* Quick "add restaurant" — shown everywhere except the list page, which
             already has its own Add button. */}
-        {pathname !== "/" && pathname !== "/restaurants" && (
+        {!isGuestRoute && pathname !== "/" && pathname !== "/restaurants" && (
           <NavbarItem>
             <Button
               as={NextLink}
@@ -134,31 +148,33 @@ export function Header({ userName, isAdmin, isDev }: Props) {
             </Button>
           </NavbarItem>
         )}
-        <Dropdown>
-          <DropdownTrigger>
-            <Button variant="flat" size="sm">
-              {userName ?? "Menu"}
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu
-            aria-label="User menu"
-            items={dropdownItems}
-            onAction={(key) => {
-              const item = dropdownItems.find((i) => i.key === key);
-              if (item) window.location.assign(item.href);
-            }}
-          >
-            {(item) => (
-              <DropdownItem
-                key={item.key}
-                color={item.danger ? "danger" : "default"}
-                className={item.danger ? "text-danger" : ""}
-              >
-                {item.label}
-              </DropdownItem>
-            )}
-          </DropdownMenu>
-        </Dropdown>
+        {!isGuestRoute && (
+          <Dropdown>
+            <DropdownTrigger>
+              <Button variant="flat" size="sm">
+                {userName ?? "Menu"}
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="User menu"
+              items={dropdownItems}
+              onAction={(key) => {
+                const item = dropdownItems.find((i) => i.key === key);
+                if (item) window.location.assign(item.href);
+              }}
+            >
+              {(item) => (
+                <DropdownItem
+                  key={item.key}
+                  color={item.danger ? "danger" : "default"}
+                  className={item.danger ? "text-danger" : ""}
+                >
+                  {item.label}
+                </DropdownItem>
+              )}
+            </DropdownMenu>
+          </Dropdown>
+        )}
       </NavbarContent>
 
       <NavbarMenu className="pt-[env(safe-area-inset-top)]">

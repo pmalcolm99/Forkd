@@ -78,6 +78,20 @@
       "when": 1783883271955,
       "tag": "0010_stormy_red_wolf",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786916451941,
+      "tag": "0011_public_orphan",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786948541339,
+      "tag": "0012_thankful_living_tribunal",
+      "breakpoints": true
     }
   ]
 }

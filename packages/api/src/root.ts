@@ -10,6 +10,7 @@ import { photosRouter } from "./routers/photos";
 import { storageRouter } from "./routers/storage";
 import { statsRouter } from "./routers/stats";
 import { backupsRouter } from "./routers/backups";
+import { splitsRouter } from "./routers/splits";
 
 export const appRouter = router({
   auth: authRouter,
@@ -23,6 +24,7 @@ export const appRouter = router({
   storage: storageRouter,
   stats: statsRouter,
   backups: backupsRouter,
+  splits: splitsRouter,
 });
 
 export type AppRouter = typeof appRouter;

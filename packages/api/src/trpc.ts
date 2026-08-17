@@ -24,6 +24,7 @@ export const createTRPCContext = async ({
   req: Request;
   fileStore?: {
     deletePhotoFiles: (restaurantId: string, photoId: string) => Promise<void>;
+    deleteReceiptFiles?: (splitId: string, imageId: string) => Promise<void>;
     getStorageUsage?: () => Promise<{
       uploadsBytes: number;
       backupsBytes: number;

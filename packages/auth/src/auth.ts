@@ -61,6 +61,27 @@ export const auth = betterAuth({
         fieldName: "mapDefaultView",
         input: false,
       },
+      // Payment handles, surfaced on a bill's share page when this person
+      // fronted the money. fieldName is the camelCase Drizzle property, not
+      // the snake_case column.
+      venmoHandle: {
+        type: "string" as const,
+        required: false,
+        fieldName: "venmoHandle",
+        input: false,
+      },
+      cashAppHandle: {
+        type: "string" as const,
+        required: false,
+        fieldName: "cashAppHandle",
+        input: false,
+      },
+      paymentNote: {
+        type: "string" as const,
+        required: false,
+        fieldName: "paymentNote",
+        input: false,
+      },
       defaultFilters: {
         type: "string" as const,
         required: false,

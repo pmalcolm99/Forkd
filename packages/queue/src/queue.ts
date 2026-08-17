@@ -29,6 +29,20 @@ export const backupQueue = new Queue<BackupJobData>("backup", {
   },
 });
 
+export type ReceiptJobData = {
+  splitId: string;
+  userId: string;
+};
+
+export const receiptQueue = new Queue<ReceiptJobData>("receipt", {
+  connection: getRedisOptions(),
+  defaultJobOptions: {
+    attempts: 1,
+    removeOnComplete: 100,
+    removeOnFail: 500,
+  },
+});
+
 // Stable id for the single repeatable scheduled-backup entry.
 export const SCHEDULED_BACKUP_JOB_NAME = "scheduled-backup";
 

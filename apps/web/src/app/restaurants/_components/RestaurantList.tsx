@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Map, Plus, Upload, Utensils } from "lucide-react";
+import { Map, Plus, Receipt, Upload, Utensils } from "lucide-react";
 import { ImportModal } from "./ImportModal";
 import {
   Button,
@@ -106,9 +106,11 @@ export function RestaurantList() {
   return (
     <main className="mx-auto max-w-7xl p-6">
       <OnboardingCard />
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Restaurants</h1>
-        <div className="flex gap-2">
+      <div className="mb-6 flex items-center justify-between gap-2">
+        {/* text-2xl below sm: at 390px the title plus four icon buttons
+            overflows the row at text-3xl. */}
+        <h1 className="truncate text-2xl font-bold sm:text-3xl">Restaurants</h1>
+        <div className="flex shrink-0 gap-2">
           {/* Mobile: icon-only buttons */}
           <Button
             as={Link}
@@ -131,6 +133,16 @@ export function RestaurantList() {
           </Button>
           <Button
             as={Link}
+            href="/splits/new"
+            variant="flat"
+            isIconOnly
+            aria-label="Split a bill"
+            className="sm:hidden"
+          >
+            <Receipt className="h-4 w-4" />
+          </Button>
+          <Button
+            as={Link}
             href="/restaurants/new"
             color="primary"
             isIconOnly
@@ -146,6 +158,17 @@ export function RestaurantList() {
           </Button>
           <Button variant="flat" className="hidden sm:flex" onPress={() => setImportOpen(true)}>
             Import from social
+          </Button>
+          <Button
+            as={Link}
+            href="/splits/new"
+            variant="flat"
+            isIconOnly
+            aria-label="Split a bill"
+            title="Split a bill"
+            className="hidden sm:flex"
+          >
+            <Receipt className="h-4 w-4" />
           </Button>
           <Button as={Link} href="/restaurants/new" color="primary" className="hidden sm:flex">
             Add restaurant

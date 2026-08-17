@@ -33,6 +33,9 @@ interface DefaultValues {
   theme: string | null | undefined;
   mapDefaultView: string | null | undefined;
   defaultFilters: DefaultFilters | null | undefined;
+  venmoHandle: string | null | undefined;
+  cashAppHandle: string | null | undefined;
+  paymentNote: string | null | undefined;
 }
 
 interface Props {
@@ -61,6 +64,9 @@ export function ProfileForm({ defaultValues, cuisines, users }: Props) {
     defaultValues.defaultFilters?.restaurants ?? {}
   );
   const [mapFilters, setMapFilters] = useState<FilterSet>(defaultValues.defaultFilters?.map ?? {});
+  const [venmoHandle, setVenmoHandle] = useState(defaultValues.venmoHandle ?? "");
+  const [cashAppHandle, setCashAppHandle] = useState(defaultValues.cashAppHandle ?? "");
+  const [paymentNote, setPaymentNote] = useState(defaultValues.paymentNote ?? "");
   const [error, setError] = useState<string | null>(null);
 
   const update = trpc.auth.updateProfile.useMutation({
@@ -84,6 +90,9 @@ export function ProfileForm({ defaultValues, cuisines, users }: Props) {
       theme,
       mapDefaultView,
       defaultFilters: Object.keys(defaultFilters).length ? defaultFilters : null,
+      venmoHandle: venmoHandle.trim() || null,
+      cashAppHandle: cashAppHandle.trim() || null,
+      paymentNote: paymentNote.trim() || null,
     });
   }
 
@@ -133,6 +142,38 @@ export function ProfileForm({ defaultValues, cuisines, users }: Props) {
           <SelectItem key={o.key}>{o.label}</SelectItem>
         ))}
       </Select>
+
+      <Divider className="my-2" />
+
+      <div id="payment" className="scroll-mt-20">
+        <h2 className="text-lg font-semibold">Getting paid back</h2>
+        <p className="mb-3 text-sm text-default-500">
+          Shown to everyone else on a bill when you&apos;re the one who paid, so they can send your
+          share back without asking. Leave blank to skip.
+        </p>
+        <div className="flex flex-col gap-4">
+          <Input
+            label="Venmo username"
+            placeholder="your-handle"
+            startContent={<span className="text-default-400">@</span>}
+            value={venmoHandle}
+            onValueChange={setVenmoHandle}
+          />
+          <Input
+            label="Cash App cashtag"
+            placeholder="yourtag"
+            startContent={<span className="text-default-400">$</span>}
+            value={cashAppHandle}
+            onValueChange={setCashAppHandle}
+          />
+          <Input
+            label="Anything else"
+            placeholder="Zelle to 555-0100, or just get me next time"
+            value={paymentNote}
+            onValueChange={setPaymentNote}
+          />
+        </div>
+      </div>
 
       <Divider className="my-2" />
 

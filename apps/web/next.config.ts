@@ -20,6 +20,33 @@ const nextConfig: NextConfig = {
     APP_VERSION: rootPkg.version,
     APP_GIT_SHA: process.env.GIT_SHA ?? "dev",
   },
+  async headers() {
+    // Baseline hardening everywhere. These are cheap and have no downside for a
+    // single-origin app that never intends to be framed.
+    const baseline = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+    ];
+
+    // Guest bill-split paths carry a capability token in the URL. `no-referrer`
+    // guarantees that token can never ride out in a Referer header, rather than
+    // relying on the browser's default policy being strict enough. X-Robots-Tag
+    // is set here as well as in the page's own metadata so a crawler that only
+    // reads headers (or issues a HEAD) still sees it.
+    const guest = [
+      ...baseline.filter((h) => h.key !== "Referrer-Policy"),
+      { key: "Referrer-Policy", value: "no-referrer" },
+      { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet" },
+    ];
+
+    return [
+      { source: "/:path*", headers: baseline },
+      { source: "/g/:path*", headers: guest },
+      { source: "/api/v1/guest/:path*", headers: guest },
+    ];
+  },
   webpack: (config, { isServer }) => {
     if (isServer) {
       // playwright-core bundles chromium-bidi internally (not an npm package).

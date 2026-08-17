@@ -9,6 +9,36 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.2.0",
+    highlights: [
+      {
+        title: "Split a bill",
+        description:
+          "New Bills tab. Photograph a restaurant receipt and Forkd reads the line items for you, then everyone taps what they ordered and sees exactly what they owe.",
+      },
+      {
+        title: "Fair tax and tip",
+        description:
+          "Choose whether the tip is split evenly or based on what each person ordered — tax and service charge too. Everyone's shares always add up to the receipt total, to the cent.",
+      },
+      {
+        title: "Share a link",
+        description:
+          'Generate a link (or a QR code to scan at the table) so everyone can pick their own items. There\'s also a "copy for group chat" button.',
+      },
+      {
+        title: "Get paid back",
+        description:
+          "In Profile, add your Venmo or Cash App handle. When you're the one who paid, everyone else sees a button to send your money back.",
+      },
+      {
+        title: "Travelling? Foreign receipts work too",
+        description:
+          "If a receipt isn't in dollars, Forkd asks whether to use the day's exchange rate or the total from your bank statement — the statement option matches what you were actually charged.",
+      },
+    ],
+  },
+  {
     version: "1.1.0",
     highlights: [
       {

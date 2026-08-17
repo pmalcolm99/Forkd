@@ -23,6 +23,13 @@ export const user = pgTable(
     defaultFilters: text("default_filters"),
     // App version whose changelog the user has already seen (gates the popup).
     lastSeenChangelogVersion: text("last_seen_changelog_version"),
+    // Where to send money when this person fronts a bill. Shown on the split
+    // share page so people can pay without asking "what's your Venmo again".
+    venmoHandle: text("venmo_handle"),
+    cashAppHandle: text("cash_app_handle"),
+    // Free text for anything else (Zelle number, bank details, "just pay me
+    // back in tacos"). Rendered as-is, never linkified.
+    paymentNote: text("payment_note"),
     lastActiveAt: timestamp("last_active_at"),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),

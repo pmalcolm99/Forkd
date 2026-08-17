@@ -21,6 +21,10 @@ const updateProfileSchema = z.object({
   theme: themeEnum.nullable().optional(),
   mapDefaultView: mapDefaultViewEnum.nullable().optional(),
   defaultFilters: defaultFiltersSchema.nullable().optional(),
+  // Payment handles, shown on a bill's share page when this person paid.
+  venmoHandle: z.string().max(60).trim().nullable().optional(),
+  cashAppHandle: z.string().max(60).trim().nullable().optional(),
+  paymentNote: z.string().max(300).trim().nullable().optional(),
 });
 
 // defaultFilters is stored as a JSON text column; parse it defensively for `me`.
@@ -49,6 +53,9 @@ export const authRouter = router({
       mapDefaultView: ctx.user.mapDefaultView ?? null,
       defaultFilters: parseDefaultFilters(ctx.user.defaultFilters),
       lastSeenChangelogVersion: ctx.user.lastSeenChangelogVersion ?? null,
+      venmoHandle: ctx.user.venmoHandle ?? null,
+      cashAppHandle: ctx.user.cashAppHandle ?? null,
+      paymentNote: ctx.user.paymentNote ?? null,
     };
   }),
 
@@ -69,6 +76,15 @@ export const authRouter = router({
         ...(input.defaultFilters !== undefined
           ? { defaultFilters: input.defaultFilters ? JSON.stringify(input.defaultFilters) : null }
           : {}),
+        // Strip a leading @ / $ so the deep links build correctly whichever way
+        // people type their handle.
+        ...(input.venmoHandle !== undefined
+          ? { venmoHandle: input.venmoHandle?.replace(/^@/, "") || null }
+          : {}),
+        ...(input.cashAppHandle !== undefined
+          ? { cashAppHandle: input.cashAppHandle?.replace(/^\$/, "") || null }
+          : {}),
+        ...(input.paymentNote !== undefined ? { paymentNote: input.paymentNote || null } : {}),
       })
       .where(eq(user.id, ctx.user.id));
     return { success: true };
